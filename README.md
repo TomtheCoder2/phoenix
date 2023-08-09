@@ -40,7 +40,7 @@ fun binary_search(list, item) {
 
 var elements = [1, 3, 5, 7, 9];
 var search = 7;
-printf("element {} is at index: {}", search, binary_search([1, 3, 5, 7, 9], 7));```
+printf("element {} is at index: {}", search, binary_search([1, 3, 5, 7, 9], 7));
 ```
 
 ## TODO
