@@ -17,7 +17,8 @@ Based on the book [Crafting Interpreters](https://craftinginterpreters.com/) and
 
 ## Examples
 ### Binary Search
-```fun binary_search(list, item) {
+```
+fun binary_search(list, item) {
   var low = 0;
   var high = list.len() - 1;
 
