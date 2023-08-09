@@ -1,5 +1,5 @@
 [package]
-name = "phoenix"
+name = "phoenix-lang"
 description = "A simple, fast programming language"
 version = "0.1.1"
 edition = "2021"
