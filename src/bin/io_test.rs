@@ -14,6 +14,6 @@ fn main() {
     println!("{:?}", encoded);
 
     let decoded: CompilationResult = bincode::deserialize(&encoded[..]).unwrap();
-    let vm = VM::new(ExecutionMode::Default, decoded, false);
+    let mut vm = VM::new(ExecutionMode::Default, decoded, false);
     vm.run();
 }
