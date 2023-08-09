@@ -1,5 +1,6 @@
 # Phoenix
 ## Programming Language
+Based on the book [Crafting Interpreters](https://craftinginterpreters.com/) and [this repo](https://github.com/rctcwyvrn/rlox)
 
 ## Features
 * Dynamic typing
