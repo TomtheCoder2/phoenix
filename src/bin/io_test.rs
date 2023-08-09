@@ -3,7 +3,7 @@ use phoenix::vm::{ExecutionMode, VM};
 
 fn main() {
     let code = "print(\"hello\");".to_string();
-    let mut compiler = Compiler::new_default(&code, true, 0);
+    let mut compiler = Compiler::new_file("script".to_string(), code, false, 0);
     let res = if let Some(res) = compiler.compile(false) {
         res
     } else {
