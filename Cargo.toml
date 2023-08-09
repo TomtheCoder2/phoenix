@@ -8,6 +8,7 @@ repository = "https://github.com/TomtheCoder2/phoenix"
 readme = "README.md"
 keywords = ["phoenix", "programming", "language", "fast", "simple"]
 categories = ["development-tools", "embedded", "programming-languages"]
+authors = ["TomtheCoder2 (Nautilus) <@TomtheCoder2>"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
