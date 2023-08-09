@@ -1,5 +1,5 @@
-use phoenix::compiler::{CompilationResult, Compiler};
-use phoenix::vm::{ExecutionMode, VM};
+use phoenix_lang::compiler::{CompilationResult, Compiler};
+use phoenix_lang::vm::{ExecutionMode, VM};
 
 fn main() {
     let code = "print(\"hello\");".to_string();

@@ -1,4 +1,4 @@
-use phoenix::compiler::Compiler;
+use phoenix_lang::compiler::Compiler;
 
 fn main() {
     let code = "print 1 + 11;".to_string();

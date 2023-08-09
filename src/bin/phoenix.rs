@@ -1,4 +1,4 @@
-use phoenix::run;
+use phoenix_lang::run;
 
 fn main() {
     run::main();
