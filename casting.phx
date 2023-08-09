@@ -1,0 +1,8 @@
+var l = 2.0;
+print(type(l)); // float
+print(type(int(l))); // long
+print(type(float(l))); // float
+print(type(float(int(l)))); // float
+
+var int = 0.90;
+print(type(int(int))); // int
