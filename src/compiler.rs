@@ -935,17 +935,20 @@ impl Compiler {
         // We trust that the scanner has given us something that looks like a number (124214.52)
         // BUT the scanner does NOT check the size, so this parse to f32 can still fail due to overflow
 
-        let mut string = &self.previous().lexeme;
+        let string = &self.previous().lexeme;
 
         // we want to cast all numbers first to i64, and if that fails to f32, because normally we want integers
         if let Ok(value) = string.parse::<i64>() {
             self.emit_constant(Value::Long(value));
         } else {
-            if string.ends_with('f') {
-                string = &string.replace('f', "");
-            }
+            // todo make this more efficient
+            let string = if string.ends_with('f') {
+                string.replace('f', "")
+            } else {
+                string.to_string()
+            };
             // we try it as a long, maybe it's an integer
-            if let Ok(value) = self.previous().lexeme.parse::<f32>() {
+            if let Ok(value) = string.parse::<f32>() {
                 self.emit_constant(Value::Float(value));
             } else {
                 self.error("Invalid number".to_string().as_str())
@@ -1003,8 +1006,8 @@ impl Compiler {
     /// 2. Determine if this is a get or a set based on can_assign and the existence of a '='
     fn named_variable(&mut self, name: &String, can_assign: bool) {
         let local_arg = match self.current_module().resolver.resolve_local(name) {
-            Ok(opt) => opt,
-            Err(_) => {
+            Some(opt) => opt,
+            None => {
                 self.error("Cannot read local variable in its own initializer");
                 return;
             }

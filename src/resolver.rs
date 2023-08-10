@@ -46,7 +46,7 @@ impl Resolver {
     delegate_to_latest!(is_global, bool);
     delegate_to_latest!(mark_initialized, ());
     delegate_to_latest!(declare_variable, bool, String);
-    delegate_to_latest!(resolve_local, Result<Option<usize>, ()>, &str);
+    delegate_to_latest!(resolve_local, Option<Option<usize>>, &str);
 
     /// Calls [Resolver::recursive_resolve] to handle the flattening of upvalues
     ///
@@ -230,7 +230,7 @@ impl ResolverNode {
     /// *  Ok(Some(index)) => found
     ///
     /// Fixme: Should probably make this a Option<Option<usize>>
-    pub fn resolve_local(&self, name: &str) -> Result<Option<usize>, ()> {
+    pub fn resolve_local(&self, name: &str) -> Option<Option<usize>> {
         let mut error = false;
         for (i, local) in self.locals.iter().enumerate() {
             if local.name.eq(name) {
@@ -238,15 +238,15 @@ impl ResolverNode {
                     error = true;
                     break;
                 } else {
-                    return Ok(Some(i));
+                    return Some(Some(i));
                 }
             }
         }
 
         if error {
-            Err(())
+            None
         } else {
-            Ok(None)
+            Some(None)
         }
     }
 

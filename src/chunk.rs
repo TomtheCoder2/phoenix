@@ -94,6 +94,12 @@ pub struct Chunk {
     pub code: Vec<Instr>,
 }
 
+impl Default for Chunk {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Chunk {
     pub fn write_instruction(&mut self, instruction: Instr) {
         self.code.push(instruction);

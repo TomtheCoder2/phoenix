@@ -73,7 +73,7 @@ impl PartialEq for GC {
 }
 
 impl GC {
-    pub fn alloc(&mut self, val: HeapObj, stack: &Vec<Value>, globals: &Vec<Global>) -> Value {
+    pub fn alloc(&mut self, val: HeapObj, stack: &[Value], globals: &[Global]) -> Value {
         if DEBUG_STRESS_GC || self.allocations >= self.next_gc_threshold {
             self.collect_garbage(stack, globals);
         }
@@ -130,7 +130,7 @@ impl GC {
         }
     }
 
-    fn mark_roots(&mut self, stack: &Vec<Value>, globals: &Vec<Global>) {
+    fn mark_roots(&mut self, stack: &[Value], globals: &[Global]) {
         for val in stack.iter() {
             self.mark_value(val);
         }
@@ -283,7 +283,7 @@ impl GC {
         }
     }
 
-    fn collect_garbage(&mut self, stack: &Vec<Value>, globals: &Vec<Global>) {
+    fn collect_garbage(&mut self, stack: &[Value], globals: &[Global]) {
         if DEBUG_GC {
             eprintln!("--- gc begin")
         }

@@ -20,7 +20,3 @@ serde = { version = "1.0.26", features = ["derive"] }
 clap = { version = "4.2.1", features = ["derive"] }
 lz4-compression = "0.7.0"
 colored = "2"
-
-
-[profile.dev]
-#opt-level = 3

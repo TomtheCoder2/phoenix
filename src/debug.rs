@@ -3,10 +3,10 @@ use crate::value::Value;
 
 pub fn disassemble_class_chunk(
     class_chunk: &ClassChunk,
-    function_defs: &Vec<FunctionChunk>,
-    class_defs: &Vec<ClassChunk>,
-    constants: &Vec<Value>,
-    identifiers: &Vec<String>,
+    function_defs: &[FunctionChunk],
+    class_defs: &[ClassChunk],
+    constants: &[Value],
+    identifiers: &[String],
 ) {
     match class_chunk.superclass {
         Some(i) => eprintln!(
@@ -29,8 +29,8 @@ pub fn disassemble_fn_chunk(
     file_name: String,
     index: usize,
     fn_chunk: &FunctionChunk,
-    constants: &Vec<Value>,
-    identifiers: &Vec<String>,
+    constants: &[Value],
+    identifiers: &[String],
 ) {
     match &fn_chunk.name {
         Some(name) => eprintln!("== <fn {} | #{}> ==============", name, index),
@@ -39,7 +39,7 @@ pub fn disassemble_fn_chunk(
     disassemble_chunk(&fn_chunk.chunk, constants, identifiers);
 }
 
-fn disassemble_chunk(chunk: &Chunk, constants: &Vec<Value>, identifiers: &Vec<String>) {
+fn disassemble_chunk(chunk: &Chunk, constants: &[Value], identifiers: &[String]) {
     eprintln!("---");
     eprintln!("byte\tline\tOpCode");
     let mut last_line_num = 0;
@@ -60,8 +60,8 @@ fn disassemble_chunk(chunk: &Chunk, constants: &Vec<Value>, identifiers: &Vec<St
 pub fn disassemble_instruction(
     instr: &Instr,
     instr_offset: usize,
-    constants: &Vec<Value>,
-    identifiers: &Vec<String>,
+    constants: &[Value],
+    identifiers: &[String],
 ) {
     match instr.op_code {
         OpCode::OpConstant(index) => eprintln!(
