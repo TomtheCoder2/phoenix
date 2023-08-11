@@ -218,8 +218,6 @@ pub struct ModuleChunk {
     pub name: String,
     /// Whether or not this is the main module
     pub main: bool,
-    /// The chunk of code for the module
-    pub chunk: Chunk,
     /// The file name of the module
     pub file: String,
     pub constants: Vec<Value>,
@@ -235,7 +233,6 @@ impl ModuleChunk {
         ModuleChunk {
             main,
             name,
-            chunk: Chunk::new(),
             functions: Vec::new(),
             constants: Vec::new(),
             classes: Vec::new(),
@@ -249,7 +246,6 @@ impl ModuleChunk {
         ModuleChunk {
             main: module.main,
             name: module.name,
-            chunk: module.chunk,
             functions: module.functions,
             constants: module.constants,
             classes: module.classes,

@@ -133,12 +133,20 @@ pub fn float(args: Vec<Value>) -> Result<Value, String> {
         Float(f) => Float(*f),
         Long(l) => Float(*l as f32),
         Bool(b) => Float(*b as i32 as f32),
-        PhoenixString(s) => Float(match if s.ends_with('f') { &s[0..s.len() - 1] } else { s }.parse::<f32>() {
-            Ok(i) => i,
-            Err(_) => {
-                return Err(format!("Could not convert {} to float!", s));
+        PhoenixString(s) => Float(
+            match if s.ends_with('f') {
+                &s[0..s.len() - 1]
+            } else {
+                s
             }
-        }),
+            .parse::<f32>()
+            {
+                Ok(i) => i,
+                Err(_) => {
+                    return Err(format!("Could not convert {} to float!", s));
+                }
+            },
+        ),
         _ => {
             return Err(format!(
                 "Could not convert {} to float!",

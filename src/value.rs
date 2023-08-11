@@ -6,9 +6,8 @@ use serde::{Deserialize, Serialize};
 use crate::native::NativeFn;
 use crate::vm::{VMState, VM};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Value {
-    // todo: this should be f64
     Float(f32),
     Long(i64),
     Bool(bool),
@@ -17,13 +16,21 @@ pub enum Value {
     PhoenixList(usize),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?
     PhoenixFunction(usize),
-    #[serde(skip_serializing, skip_deserializing)]
+    #[serde(skip)]
     NativeFunction(Option<usize>, NativeFn),
     PhoenixClass(usize),
     // similar to class, but for modules
     PhoenixModule(usize),
     PhoenixPointer(usize),
     PhoenixBoundMethod(ObjBoundMethod),
+}
+
+impl Eq for Value {}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        values_equal((self, other))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -164,7 +171,7 @@ pub fn values_equal(t: (&Value, &Value)) -> bool {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Ord, PartialOrd, Eq)]
 pub struct ObjBoundMethod {
     pub method: usize,
     // Index into the functions vec for which function to call

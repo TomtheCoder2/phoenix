@@ -22,9 +22,9 @@ pub mod precedence;
 pub mod resolver;
 pub mod run;
 pub mod scanner;
+pub mod utils;
 pub mod value;
 pub mod vm;
-pub mod utils;
 
 #[derive(Debug, PartialEq)]
 pub enum InterpretResult {

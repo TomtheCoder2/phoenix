@@ -16,7 +16,6 @@ fn fib_test() {
     println!("Time elapsed in expensive_function() is: {:?}", duration);
 }
 
-
 use phoenix_lang::compiler::{CompilationResult, Compiler};
 use phoenix_lang::vm::{ExecutionMode, VM};
 
@@ -37,7 +36,6 @@ fn io_test() {
     let mut vm = VM::new(ExecutionMode::Default, decoded, false);
     vm.run();
 }
-
 
 #[test]
 fn lang_test() {

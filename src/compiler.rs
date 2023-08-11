@@ -473,7 +473,11 @@ impl Compiler {
     fn parse_variable(&mut self, error_msg: &str) -> usize {
         self.consume(TokenType::Identifier, error_msg);
         // check if the variable has the same name as a native function
-        if NATIVE_FUNCTIONS.lock().unwrap().contains_key(&*self.previous().lexeme) {
+        if NATIVE_FUNCTIONS
+            .lock()
+            .unwrap()
+            .contains_key(&*self.previous().lexeme)
+        {
             self.error("Cannot redefine a native function");
         }
         self.declare_variable();
@@ -919,7 +923,7 @@ impl Compiler {
         self.emit_instr(OpPop);
         self.parse_precedence(Precedence::And); // Parse right hand side of the infix expression
         self.patch_jump(end_jump); // Jump to after it if the first argument was already false, leaving the false value on the top of the stack to be the result
-        // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
+                                   // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
     }
 
     fn or_operator(&mut self) {
@@ -947,7 +951,13 @@ impl Compiler {
             self.emit_constant(Value::Long(value));
         } else {
             // we try it as a long, maybe it's an integer
-            if let Ok(value) = if s.ends_with('f') { &s[0..s.len() - 1] } else { s }.parse::<f32>() {
+            if let Ok(value) = if s.ends_with('f') {
+                &s[0..s.len() - 1]
+            } else {
+                s
+            }
+            .parse::<f32>()
+            {
                 self.emit_constant(Value::Float(value));
             } else {
                 self.error(format!("Invalid number: {s}").as_str());
@@ -1347,6 +1357,11 @@ impl Compiler {
             None
         }
     }
+
+    pub fn compile_code(code: String, debug: bool) -> Option<CompilationResult> {
+        let mut compiler = Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, false, 0);
+        compiler.compile(debug)
+    }
 }
 
 impl Clone for Compiler {
@@ -1366,7 +1381,7 @@ impl Clone for Compiler {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CompilationResult {
     pub version: String,
     pub modules: Vec<ModuleChunk>,
