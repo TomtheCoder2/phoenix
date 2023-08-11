@@ -960,8 +960,8 @@ impl Compiler {
             TokenType::False => self.emit_instr(OpFalse),
             TokenType::True => self.emit_instr(OpTrue),
             TokenType::Nil => self.emit_instr(OpNil),
-            _ => panic!(
-                "Unreachable state reached, attempted to make a literal out of a non-literal type?"
+            _ => unreachable!(
+                "Unreachable state reached, attempted to make a literal out of a non-literal type???"
             ),
         }
     }
@@ -1031,6 +1031,9 @@ impl Compiler {
             }
         };
 
+        // hacky way to implement all kinds of operations
+        // todo: make this better
+        // todo: check if this works correctly with classes and all that stuff
         // Figure out if we want to use the get or the set from the pair of possible ops we determined earlier
         macro_rules! emit_assign {
             ($operation: path) => {{
