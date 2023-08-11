@@ -5,4 +5,8 @@ print(type(float(l))); // float
 print(type(float(int(l)))); // float
 
 var int = 0.90;
-print(type(int(int))); // int
+//print(type(int(int))); // int
+
+fun f() {
+    g = 0;
+}

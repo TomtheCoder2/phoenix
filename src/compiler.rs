@@ -10,6 +10,7 @@ use crate::chunk::CompilerModuleChunk;
 use crate::chunk::OpCode::*;
 use crate::chunk::{Chunk, ClassChunk, FunctionChunk, FunctionType, Instr, ModuleChunk, OpCode};
 use crate::debug::{disassemble_class_chunk, disassemble_fn_chunk};
+use crate::native::NATIVE_FUNCTIONS;
 use crate::precedence::{get_rule, ParseFn, Precedence};
 
 use crate::scanner::{Scanner, Token, TokenType};
@@ -471,6 +472,10 @@ impl Compiler {
     /// Calls declare_variable() if the current scope is local
     fn parse_variable(&mut self, error_msg: &str) -> usize {
         self.consume(TokenType::Identifier, error_msg);
+        // check if the variable has the same name as a native function
+        if NATIVE_FUNCTIONS.lock().unwrap().contains_key(&*self.previous().lexeme) {
+            self.error("Cannot redefine a native function");
+        }
         self.declare_variable();
 
         if self.current_module().resolver.is_global() {
@@ -914,7 +919,7 @@ impl Compiler {
         self.emit_instr(OpPop);
         self.parse_precedence(Precedence::And); // Parse right hand side of the infix expression
         self.patch_jump(end_jump); // Jump to after it if the first argument was already false, leaving the false value on the top of the stack to be the result
-                                   // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
+        // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
     }
 
     fn or_operator(&mut self) {
