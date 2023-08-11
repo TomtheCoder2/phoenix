@@ -15,6 +15,21 @@ Based on the book [Crafting Interpreters](https://craftinginterpreters.com/) and
 * Inheritance
 * API for native functions written in Rust
 
+
+## Usage
+* To start the program run:
+```shell
+cargo run -- --help
+```
+* To install phoenix run:
+```shell
+cargo install --path .
+```
+Then you can run phoenix with:
+```shell
+phoenix --help
+```
+
 ## Examples
 ### Binary Search
 ```
