@@ -1,0 +1,14 @@
+var l = 2.0;
+print(type(l)); // float
+print(type(int(l))); // long
+print(type(float(l))); // float
+print(type(float(int(l)))); // float
+
+
+// Error because you can't redefine a native function
+// var int = 0.90;
+
+print(int("1")); // 1
+print(float("0.0001")); // 0.0001
+print(float("1f")); // 1.0
+print(1f); // 1.0

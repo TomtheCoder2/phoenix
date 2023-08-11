@@ -363,14 +363,10 @@ impl VMState {
     /// Defines all native functions
     ///
     /// Searches for references to native functions and adds them in if they're used in the program
-    /// Todo: make the compiler/vm reject using these strings as anything else other than to call global with
     fn define_std_lib(&mut self, identifiers: &[String]) {
-        // if let Some(index) = identifiers.iter().position(|x| x == "clock") {
-        //     self.globals[index] = Global::Init(Value::NativeFunction(clock));
-        // }
         for (str, nf) in match NATIVE_FUNCTIONS.lock() {
             Ok(x) => x,
-            Err(_) => panic!("Failed to lock native functions mutex"),
+            Err(_) => phoenix_error!("Failed to lock native functions mutex"),
         }
         .iter()
         {
@@ -566,10 +562,7 @@ impl VM {
                         return InterpretResult::InterpretRuntimeError;
                     }
                 }
-            }
-        }
-
-        macro_rules! op_binaries {
+            };
             ($val_type: path, $val_type2: path, $oper: tt) => {
                 {
                     //if let ($val_type(a), $val_type(b)) = (self.pop(), self.pop()) {
@@ -1134,9 +1127,9 @@ impl VM {
                     let t = (&state.pop(), &state.pop());
                     dbg!(t);
                 }
-                OpDivide => op_binaries!(Value::Float, Value::Long, /),
-                OpSubtract => op_binaries!(Value::Float, Value::Long, -),
-                OpMultiply => op_binaries!(Value::Float, Value::Long, *),
+                OpDivide => op_binary!(Value::Float, Value::Long, /),
+                OpSubtract => op_binary!(Value::Float, Value::Long, -),
+                OpMultiply => op_binary!(Value::Float, Value::Long, *),
                 OpGreater => op_binary!(Value::Bool, >),
                 OpLess => op_binary!(Value::Bool, <),
                 OpEqual => {

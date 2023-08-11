@@ -97,6 +97,8 @@ impl Value {
     pub fn as_float(&self) -> Option<f32> {
         if let Value::Float(val) = self {
             Some(*val)
+        } else if let Value::Long(val) = self {
+            Some(*val as f32)
         } else {
             None
         }
@@ -113,10 +115,11 @@ impl Value {
     }
 
     pub fn as_bool(&self) -> Option<bool> {
-        if let Value::Bool(val) = self {
-            Some(*val)
-        } else {
-            None
+        match self {
+            Value::Bool(val) => Some(*val),
+            Value::Long(val) => Some(*val != 0),
+            Value::Float(val) => Some(*val != 0.0),
+            _ => None,
         }
     }
 

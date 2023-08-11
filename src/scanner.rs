@@ -332,6 +332,11 @@ impl Scanner {
             }
         }
 
+        // also take an f after the number to make it a float
+        if self.peek() == b'f' {
+            self.advance();
+        }
+
         self.create_token(TokenType::Number)
     }
 

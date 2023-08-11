@@ -24,6 +24,7 @@ pub mod run;
 pub mod scanner;
 pub mod value;
 pub mod vm;
+pub mod utils;
 
 #[derive(Debug, PartialEq)]
 pub enum InterpretResult {
