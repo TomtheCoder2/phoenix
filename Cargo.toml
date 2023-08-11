@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/TomtheCoder2/phoenix"
 readme = "README.md"
 keywords = ["phoenix", "programming", "language", "fast", "simple"]
-categories = ["development-tools", "embedded", "programming-languages"]
+categories = ["development-tools", "embedded", "compilers"]
 authors = ["TomtheCoder2 (Nautilus) <@TomtheCoder2>"]
 default-run = "phoenix"
 
