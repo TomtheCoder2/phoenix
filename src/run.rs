@@ -70,7 +70,7 @@ pub fn main() {
         match cli.command.unwrap() {
             Commands::Build { file, output_file } | Commands::Compile { file, output_file } => {
                 // split of phx and append phc
-                let default_output_file = file.split(".").collect::<Vec<&str>>()[0..file.split(".").collect::<Vec<&str>>().len() - 1].join(".") + ".phc";
+                let default_output_file = file.split('.').collect::<Vec<&str>>()[0..file.split('.').collect::<Vec<&str>>().len() - 1].join(".") + ".phc";
                 let output_file = output_file.unwrap_or(default_output_file);
                 if file == output_file {
                     error!("The input file and the output file cannot be the same.");
