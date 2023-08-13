@@ -1115,7 +1115,6 @@ impl VM {
                     } else if let (Value::Long(a), Value::Long(b)) = t {
                         state.stack.push(Value::Long(a + b))
                     } else {
-                        dbg!(t);
                         self.runtime_error(
                             "Operands must be numbers or strings and must have the same type",
                             &state,
