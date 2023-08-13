@@ -6,8 +6,8 @@ use std::process::exit;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-use crate::chunk::{FunctionChunk, Instr, ModuleChunk};
-use crate::chunk::OpCode::{OpPrint, OpReturn};
+use crate::chunk::{Instr, ModuleChunk};
+use crate::chunk::OpCode::OpReturn;
 use crate::compiler::{CompilationResult, Compiler};
 use crate::vm::{ExecutionMode, VMState, VM, Global};
 use crate::InterpretResult::InterpretOK;
