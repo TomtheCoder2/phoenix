@@ -1251,10 +1251,10 @@ impl Compiler {
 
     #[deprecated(note = "Use new instead")]
     pub fn new_default(code: String, quiet: bool, start_line: usize) -> Compiler {
-        Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, quiet, start_line)
+        Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, quiet, start_line, false)
     }
 
-    pub fn new_file(file: String, code: String, quiet: bool, start_line: usize) -> Compiler {
+    pub fn new_file(file: String, code: String, quiet: bool, start_line: usize, debug_mode: bool) -> Compiler {
         let mut compiler = Compiler {
             modules: vec![CompilerModuleChunk::new(
                 true,
@@ -1270,7 +1270,7 @@ impl Compiler {
             had_error: false,
             panic_mode: false,
             quiet_mode: quiet,
-            debug_mode: false,
+            debug_mode,
         };
         compiler.new_start(file, code, quiet, start_line, 0);
         compiler
@@ -1284,12 +1284,15 @@ impl Compiler {
         quiet: bool,
         start_line: usize,
         start_pos: usize,
-    ) -> bool {
+    ) {
         self.current_module().scanner = Scanner::new(file, code, start_line);
         self.current_module().scanner.cur_pos = start_pos;
         self.current_module().scanner.start_pos = start_pos;
         self.quiet_mode = quiet;
+    }
 
+    pub fn compile(&mut self, debug: bool) -> Option<CompilationResult> {
+        self.debug_mode = debug;
         let first_token = self.current_module().scanner.scan_token();
         self.current_module().tokens.push(first_token.clone()); // Load up the first token
 
@@ -1301,13 +1304,7 @@ impl Compiler {
         if let TokenType::Error = first_token.token_type {
             self.advance();
             self.error(first_token.lexeme.as_str());
-            return true;
         }
-        false
-    }
-
-    pub fn compile(&mut self, debug: bool) -> Option<CompilationResult> {
-        self.debug_mode = debug;
         while !self.match_cur(TokenType::EOF) {
             self.declaration();
         }
@@ -1359,7 +1356,7 @@ impl Compiler {
     }
 
     pub fn compile_code(code: String, debug: bool) -> Option<CompilationResult> {
-        let mut compiler = Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, false, 0);
+        let mut compiler = Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, false, 0, debug);
         compiler.compile(debug)
     }
 }

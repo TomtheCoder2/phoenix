@@ -34,7 +34,7 @@ pub struct CallFrame {
     /// Index into the VM.functions Vec for which function is being called
     function: usize,
 
-    ip: usize,
+    pub ip: usize,
     frame_start: usize,
 }
 
@@ -54,7 +54,7 @@ pub struct VMState {
     stack: Vec<Value>,
     frames: Vec<CallFrame>,
     // we have a Vec of Vecs because each module has its own set of globals
-    globals: Vec<Vec<Global>>,
+    pub(crate) globals: Vec<Vec<Global>>,
     gc: GC,
     // Not implemented due to it destroying my code => multiple upvalues pointing to the same original value in a function will NOT affect each other. This is a small enough edge case that I'm willing to just let it go
     // upvalues: Vec<Value>,
@@ -174,7 +174,7 @@ impl VMState {
                 phoenix_error!("VM panic! Unable to get current closure?");
             }
         }
-        .clone();
+            .clone();
         match self.deref_into_mut(&pointer_val, HeapObjType::PhoenixClosure) {
             Ok(closure_obj) => closure_obj.as_closure_mut(),
             Err(x) => {
@@ -215,7 +215,7 @@ impl VMState {
                 phoenix_error!("VM panic! Attempted to push an upvalue that doesn't exist");
             }
         }
-        .clone();
+            .clone();
         self.stack.push(val);
     }
 
@@ -368,7 +368,7 @@ impl VMState {
             Ok(x) => x,
             Err(_) => phoenix_error!("Failed to lock native functions mutex"),
         }
-        .iter()
+            .iter()
         {
             if let Some(index) = identifiers.iter().position(|x| x == str) {
                 self.globals[self.current_frame.module][index] =
@@ -449,6 +449,7 @@ impl VM {
             .identifiers
             .iter()
             .position(|x| x == "init");
+        if !self.modules_cache.is_empty() { self.modules_cache[0].functions[0].chunk.code.pop(); }
         self.modules_cache.extend(result.modules);
         self.modules_table.extend(result.modules_table);
         self.init_slot = init_slot;
@@ -524,8 +525,6 @@ impl VM {
 
         // look at the functions in the first module
         let mut state = if let Some(s) = state {
-            let mut s = s;
-            s.current_frame.ip = 0;
             s
         } else {
             VMState::new(&self.modules_cache[0].identifiers)
@@ -666,7 +665,8 @@ impl VM {
                 }
                 OpDefineGlobal(index) => {
                     let var_val = state.pop();
-                    state.globals[state.current_frame.module][index] = Global::Init(var_val);
+                    state.globals[state.current_frame.module]
+                        [index] = Global::Init(var_val);
                 }
                 OpCallGlobal(module_index, index, arity) => {
                     let cur_module = state.current_frame.module;
@@ -708,7 +708,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -729,7 +729,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -751,7 +751,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -773,7 +773,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -945,7 +945,7 @@ impl VM {
                                             VM::get_variable_name(name_index, &state, &modules),
                                             instance
                                         )
-                                        .as_str(),
+                                            .as_str(),
                                         &state,
                                         &modules,
                                     );
@@ -1014,7 +1014,7 @@ impl VM {
                                                 .unwrap()
                                                 .name,
                                         )
-                                        .as_str(),
+                                            .as_str(),
                                         &state,
                                         &modules,
                                     );
