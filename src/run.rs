@@ -79,7 +79,7 @@ pub fn main() {
             }
         }
     } else if cli.file.is_none() {
-        info!("Starting Phoenix Console mode...\nUse phoenix help, --help, or -h to open the help page.");
+        info!("Phoenix Console");
         if repl().is_ok() {}
         exit(0);
     } else {

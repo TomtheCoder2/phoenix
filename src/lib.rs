@@ -112,16 +112,15 @@ pub fn repl() -> Result<(), ReadlineError> {
                 }
             }
             Err(ReadlineError::Interrupted) => {
-                println!("CTRL-C");
+                // println!("CTRL-C");
                 break;
             }
             Err(ReadlineError::Eof) => {
-                println!("CTRL-D");
+                // println!("CTRL-D");
                 break;
             }
             Err(err) => {
-                println!("Error: {:?}", err);
-                break;
+                phoenix_error!("Error: {:?}", err);
             }
         }
     }
