@@ -66,7 +66,6 @@ pub enum OpCode {
     OpNot,
 
     OpAdd,
-    OpAddAssign,
     OpSubtract,
     OpMultiply,
     OpDivide,

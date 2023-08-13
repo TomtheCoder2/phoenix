@@ -1067,13 +1067,13 @@ impl Compiler {
                 TokenType::SlashAssign => emit_assign!(OpDivide),
                 TokenType::PlusPlus => {
                     self.emit_instr(get_op);
-                    self.emit_constant(Value::Float(1.0));
+                    self.emit_constant(Value::Long(1));
                     self.emit_instr(OpAdd);
                     self.emit_instr(set_op);
                 }
                 TokenType::MinusMinus => {
                     self.emit_instr(get_op);
-                    self.emit_constant(Value::Float(1.0));
+                    self.emit_constant(Value::Long(1));
                     self.emit_instr(OpSubtract);
                     self.emit_instr(set_op);
                 }

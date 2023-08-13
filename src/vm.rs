@@ -1115,6 +1115,7 @@ impl VM {
                     } else if let (Value::Long(a), Value::Long(b)) = t {
                         state.stack.push(Value::Long(a + b))
                     } else {
+                        dbg!(t);
                         self.runtime_error(
                             "Operands must be numbers or strings and must have the same type",
                             &state,
@@ -1122,11 +1123,6 @@ impl VM {
                         );
                         return InterpretResult::InterpretRuntimeError;
                     }
-                }
-                OpAddAssign => {
-                    // add the current value on the stack to the one before
-                    let t = (&state.pop(), &state.pop());
-                    dbg!(t);
                 }
                 OpDivide => op_binary!(Value::Float, Value::Long, /),
                 OpSubtract => op_binary!(Value::Float, Value::Long, -),
