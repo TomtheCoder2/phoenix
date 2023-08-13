@@ -529,6 +529,7 @@ impl VM {
         } else {
             VMState::new(&self.modules_cache[0].identifiers)
         };
+        state.define_std_lib(&self.modules_cache[0].identifiers);
         let modules = self.modules_cache.clone();
         self.modules_cache = m;
         // todo: make this work with modules
