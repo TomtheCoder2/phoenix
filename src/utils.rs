@@ -1,4 +1,3 @@
-use crate::native::get_type_string;
 use crate::value::Value;
 
 /// Convert arg to a float and do some error checks (without casting)
@@ -12,7 +11,7 @@ pub fn to_float(arg: &Value) -> Result<f32, String> {
         }
         None => Err(format!(
             "Invalid argument: expected number: instead got {}",
-            get_type_string(arg)
+            arg.get_type_string()
         )),
     }
 }
@@ -23,7 +22,7 @@ pub fn to_long(arg: &Value) -> Result<i64, String> {
         Some(num) => Ok(num),
         None => Err(format!(
             "Invalid argument: expected number: instead got {}",
-            get_type_string(arg)
+            arg.get_type_string()
         )),
     }
 }
@@ -34,7 +33,7 @@ pub fn to_bool(arg: &Value) -> Result<bool, String> {
         Some(val) => Ok(val),
         None => Err(format!(
             "Invalid argument: expected boolean: instead got {}",
-            get_type_string(arg)
+            arg.get_type_string()
         )),
     }
 }

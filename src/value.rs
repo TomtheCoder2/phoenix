@@ -138,6 +138,23 @@ impl Value {
         }
     }
 
+    pub const fn get_type_string(&self) -> &str {
+        match self {
+            Value::Float(_) => "float",
+            Value::Long(_) => "long",
+            Value::Bool(_) => "bool",
+            Value::Nil => "nil",
+            Value::PhoenixString(_) => "string",
+            Value::PhoenixFunction(_) => "function",
+            Value::PhoenixClass(_) => "class",
+            Value::PhoenixList(_) => "list",
+            Value::NativeFunction(_, _) => "native_function",
+            Value::PhoenixPointer(_) => "pointer",
+            Value::PhoenixBoundMethod(_) => "bound_method",
+            _ => "unknown (Please report this bug)",
+        }
+    }
+
     /// Hard cast to a ObjPointer. Panics if this value is not a PhoenixPointer
     pub fn as_pointer(&self) -> usize {
         if let Value::PhoenixPointer(ptr) = self {

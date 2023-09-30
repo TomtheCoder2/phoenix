@@ -1,6 +1,6 @@
 use crate::scanner::TokenType::Identifier;
 
-// todo make file a reference, cause currently we're the filename each time smh
+// todo: make file a reference, cause currently we're cloning the filename each time smh
 #[derive(Debug, Clone)]
 pub struct Scanner {
     pub file: String,

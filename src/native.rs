@@ -22,7 +22,7 @@ lazy_static! {
             (
                 "type",
                 (Some(1), |args| {
-                    Ok(PhoenixString(get_type_string(&args[0]).to_string()))
+                    Ok(PhoenixString(args[0].get_type_string().to_string()))
                 })
             ),
             ("printf", (None, printf as NativeFn)),
@@ -53,23 +53,6 @@ fn value_to_string(v: &Value) -> String {
         _ => {
             todo!("to_string() not implemented for this type")
         }
-    }
-}
-
-pub const fn get_type_string(v: &Value) -> &str {
-    match v {
-        Float(_) => "float",
-        Long(_) => "long",
-        Bool(_) => "bool",
-        Nil => "nil",
-        PhoenixString(_) => "string",
-        PhoenixFunction(_) => "function",
-        PhoenixClass(_) => "class",
-        PhoenixList(_) => "list",
-        NativeFunction(_, _) => "native_function",
-        PhoenixPointer(_) => "pointer",
-        PhoenixBoundMethod(_) => "bound_method",
-        _ => "unknown (Please report this bug)",
     }
 }
 
@@ -122,7 +105,7 @@ pub fn int(args: Vec<Value>) -> Result<Value, String> {
         _ => {
             return Err(format!(
                 "Could not convert {} to int!",
-                get_type_string(&args[0])
+                args[0].get_type_string()
             ));
         }
     })
@@ -139,7 +122,7 @@ pub fn float(args: Vec<Value>) -> Result<Value, String> {
             } else {
                 s
             }
-            .parse::<f32>()
+                .parse::<f32>()
             {
                 Ok(i) => i,
                 Err(_) => {
@@ -150,7 +133,7 @@ pub fn float(args: Vec<Value>) -> Result<Value, String> {
         _ => {
             return Err(format!(
                 "Could not convert {} to float!",
-                get_type_string(&args[0])
+                args[0].get_type_string()
             ));
         }
     })
