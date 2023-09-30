@@ -13,6 +13,7 @@ pub enum Value {
     Bool(bool),
     Nil,
     PhoenixString(String),
+    PhoenixStringPointer(usize),
     PhoenixList(usize),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?
     PhoenixFunction(usize),
@@ -59,7 +60,8 @@ impl Value {
             Value::Float(x) => format!("{}", x),
             Value::Long(x) => format!("{}", x),
             Value::Bool(x) => format!("{}", x),
-            Value::PhoenixString(x) => x.to_string(),
+            Value::PhoenixStringPointer(x) => state.deref(*x).to_string(vm, state, modules),
+            Value::PhoenixString(x) => format!("{}", x),
             Value::PhoenixList(x) => state.deref(*x).to_string(vm, state, modules),
             Value::Nil => String::from("nil"),
             Value::PhoenixFunction(x) => format!(
@@ -75,8 +77,10 @@ impl Value {
             Value::NativeFunction(_x, _) => "<native_fn>".to_string(),
             Value::PhoenixClass(class) => format!("<class {}>", class),
             Value::PhoenixPointer(pointer) => {
-                // hacky way to check if this is a list
+                // hacky way to check if this is a list or string
                 if let HeapObjVal::PhoenixList(_) = &state.deref(*pointer).obj {
+                    state.deref(*pointer).to_string(vm, state, modules)
+                } else if let HeapObjVal::PhoenixString(_) = &state.deref(*pointer).obj {
                     state.deref(*pointer).to_string(vm, state, modules)
                 } else {
                     format!(
@@ -130,21 +134,21 @@ impl Value {
         }
     }
 
-    pub fn as_string(&self) -> Option<&String> {
-        if let Value::PhoenixString(val) = self {
-            Some(val)
+    pub fn as_string<'a>(&'a self, state: &'a VMState) -> Option<&String> {
+        if let Value::PhoenixStringPointer(x) = self {
+            Some(&state.deref_string(*x).value)
         } else {
             None
         }
     }
 
-    pub const fn get_type_string(&self) -> &str {
+    pub const fn get_type(&self) -> &str {
         match self {
             Value::Float(_) => "float",
             Value::Long(_) => "long",
             Value::Bool(_) => "bool",
             Value::Nil => "nil",
-            Value::PhoenixString(_) => "string",
+            Value::PhoenixStringPointer(_) => "string",
             Value::PhoenixFunction(_) => "function",
             Value::PhoenixClass(_) => "class",
             Value::PhoenixList(_) => "list",
@@ -166,6 +170,12 @@ impl Value {
             )
         }
     }
+
+    // /// Casts a value to a list, expects a Value::PhoenixPointer
+    // pub fn as_list(&self) -> Vec<Value> {
+    //     let p = self.as_pointer();
+    //
+    // }
 }
 
 pub fn is_falsey(val: &Value) -> bool {
@@ -178,7 +188,7 @@ pub fn values_equal(t: (&Value, &Value)) -> bool {
         (Value::Long(x), Value::Long(y)) => x == y,
         (Value::Bool(x), Value::Bool(y)) => x == y,
         (Value::Nil, Value::Nil) => true,
-        (Value::PhoenixString(x), Value::PhoenixString(y)) => x.eq(y),
+        (Value::PhoenixStringPointer(x), Value::PhoenixStringPointer(y)) => x.eq(y),
         (Value::PhoenixPointer(x), Value::PhoenixPointer(y)) => x == y,
         (Value::PhoenixClass(x), Value::PhoenixClass(y)) => x == y,
         (Value::PhoenixFunction(x), Value::PhoenixFunction(y)) => x == y,
@@ -205,6 +215,7 @@ pub enum HeapObjType {
     PhoenixInstance,
     PhoenixClosure,
     PhoenixList,
+    PhoenixString,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -250,6 +261,14 @@ impl HeapObj {
             is_marked: false,
         }
     }
+
+    pub fn new_string(val: ObjString) -> HeapObj {
+        HeapObj {
+            obj: HeapObjVal::PhoenixString(val),
+            obj_type: HeapObjType::PhoenixString,
+            is_marked: false,
+        }
+    }
 }
 
 // I swear i really tried to not have this be duplicate with HeapObjType, but couldn't figure out a way to do it
@@ -258,7 +277,7 @@ pub enum HeapObjVal {
     HeapPlaceholder,
     PhoenixInstance(ObjInstance),
     PhoenixClosure(ObjClosure),
-    // PhoenixString(String), // Maybe...
+    PhoenixString(ObjString),
     PhoenixList(ObjList),
 }
 
@@ -295,6 +314,7 @@ impl HeapObjVal {
             HeapObjVal::HeapPlaceholder => {
                 panic!("VM panic! How did a placeholder value get here?")
             }
+            HeapObjVal::PhoenixString(string) => string.value.clone(),
         }
     }
 
@@ -330,9 +350,33 @@ impl HeapObjVal {
         }
     }
 
+    pub fn as_list(&self) -> &ObjList {
+        if let HeapObjVal::PhoenixList(list) = self {
+            list
+        } else {
+            panic!("VM panic!")
+        }
+    }
+
     pub fn as_list_mut(&mut self) -> &mut ObjList {
         if let HeapObjVal::PhoenixList(list) = self {
             list
+        } else {
+            panic!("VM panic!")
+        }
+    }
+
+    pub fn as_string(&self) -> &ObjString {
+        if let HeapObjVal::PhoenixString(string) = self {
+            string
+        } else {
+            panic!("VM panic!")
+        }
+    }
+
+    pub fn as_string_mut(&mut self) -> &mut ObjString {
+        if let HeapObjVal::PhoenixString(string) = self {
+            string
         } else {
             panic!("VM panic!")
         }
@@ -381,5 +425,17 @@ pub struct ObjList {
 impl ObjList {
     pub fn new(v: Vec<Value>) -> ObjList {
         ObjList { values: v }
+    }
+}
+
+/// Runtime representation of a string
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+pub struct ObjString {
+    pub value: String,
+}
+
+impl ObjString {
+    pub fn new(value: String) -> ObjString {
+        ObjString { value }
     }
 }

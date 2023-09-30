@@ -11,7 +11,7 @@ pub fn to_float(arg: &Value) -> Result<f32, String> {
         }
         None => Err(format!(
             "Invalid argument: expected number: instead got {}",
-            arg.get_type_string()
+            arg.get_type()
         )),
     }
 }
@@ -22,7 +22,7 @@ pub fn to_long(arg: &Value) -> Result<i64, String> {
         Some(num) => Ok(num),
         None => Err(format!(
             "Invalid argument: expected number: instead got {}",
-            arg.get_type_string()
+            arg.get_type()
         )),
     }
 }
@@ -33,7 +33,19 @@ pub fn to_bool(arg: &Value) -> Result<bool, String> {
         Some(val) => Ok(val),
         None => Err(format!(
             "Invalid argument: expected boolean: instead got {}",
-            arg.get_type_string()
+            arg.get_type()
         )),
     }
+}
+
+/// Convert arg to a list and some error checks (without casting)
+pub fn to_list(arg: &Value) -> Result<Vec<Value>, String> {
+    todo!("to_list")
+    // match arg.as_list() {
+    //     Some(val) => Ok(val),
+    //     None => Err(format!(
+    //         "Invalid argument: expected list: instead got {}",
+    //         arg.get_type()
+    //     )),
+    // }
 }

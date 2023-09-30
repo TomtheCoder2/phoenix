@@ -80,6 +80,8 @@ pub enum OpCode {
     OpSetIndex,
     // create a new list with the last n elements on the stack
     OpCreateList(usize),
+    // Push the string on the stack to the heap and replace it with a pointer to the heap
+    OpCreateString,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

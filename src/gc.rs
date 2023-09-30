@@ -179,6 +179,9 @@ impl GC {
                         HeapObjVal::HeapPlaceholder => {
                             panic!("VM panic! Why do we have a valid reference to a heap placeholder value?")
                         }
+                        HeapObjVal::PhoenixString(_string) => {
+                            // to_mark.push(string.ptr);
+                        }
                     }
                 }
                 None => panic!("VM panic! Why is there an unallocated pointer?"),

@@ -151,4 +151,4 @@ pub fn run_file(filename: String, debug: bool) -> InterpretResult {
     }
 }
 
-pub const DEBUG: bool = false;
+pub const DEBUG: bool = true;

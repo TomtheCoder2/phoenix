@@ -981,6 +981,7 @@ impl Compiler {
         let cleaned = str_val[1..str_val.len() - 1].to_string();
 
         self.emit_constant(Value::PhoenixString(cleaned));
+        self.emit_instr(OpCreateString);
     }
 
     fn list(&mut self, _can_assign: bool) {
@@ -1082,7 +1083,7 @@ impl Compiler {
                     self.advance();
                     self.emit_instr(get_op);
                     self.expression();
-                    self.consume(TokenType::RightBracket, "Expected ']' after list index");
+                    self.consume(TokenType::RightBracket, "Expected ']' after index");
                     if self.match_cur(TokenType::Equal) {
                         self.expression();
                         self.emit_instr(OpSetIndex);

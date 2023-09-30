@@ -22,7 +22,7 @@ lazy_static! {
             (
                 "type",
                 (Some(1), |args| {
-                    Ok(PhoenixString(args[0].get_type_string().to_string()))
+                    Ok(PhoenixString(args[0].get_type().to_string()))
                 })
             ),
             ("printf", (None, printf as NativeFn)),
@@ -49,7 +49,6 @@ fn value_to_string(v: &Value) -> String {
         Long(x) => format!("{}", x),
         Bool(x) => format!("{}", x),
         Nil => "NIL".to_string(),
-        PhoenixString(x) => x.to_string(),
         _ => {
             todo!("to_string() not implemented for this type")
         }
@@ -105,7 +104,7 @@ pub fn int(args: Vec<Value>) -> Result<Value, String> {
         _ => {
             return Err(format!(
                 "Could not convert {} to int!",
-                args[0].get_type_string()
+                args[0].get_type()
             ));
         }
     })
@@ -133,7 +132,7 @@ pub fn float(args: Vec<Value>) -> Result<Value, String> {
         _ => {
             return Err(format!(
                 "Could not convert {} to float!",
-                args[0].get_type_string()
+                args[0].get_type()
             ));
         }
     })

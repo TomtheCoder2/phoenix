@@ -5,10 +5,7 @@ use crate::debug::*;
 use crate::gc::GC;
 use crate::native::*;
 use crate::resolver::UpValue;
-use crate::value::{
-    is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure,
-    ObjInstance, ObjList, Value,
-};
+use crate::value::{is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure, ObjInstance, ObjList, Value, ObjString};
 use crate::{error, phoenix_error, warn, InterpretResult, VERSION};
 use std::collections::HashMap;
 
@@ -95,6 +92,10 @@ impl VMState {
             .alloc(val, &self.stack, &self.globals[self.current_frame.module])
     }
 
+    fn alloc_string(&mut self, string: String) -> Value {
+        self.alloc(HeapObj::new_string(ObjString::new(string)))
+    }
+
     // Fixme: Figure out how to not copy paste this code for mut and immut
     pub fn deref(&self, pointer: usize) -> &HeapObj {
         match self.gc.instances.get(pointer) {
@@ -113,6 +114,49 @@ impl VMState {
             }
         }
     }
+
+    pub fn deref_list(&self, pointer: usize) -> &ObjList {
+        let mut obj = self.deref(pointer);
+        if let HeapObjType::PhoenixList = obj.obj_type {
+            obj.obj.as_list()
+        } else {
+            phoenix_error!("VM panic! Attempted to deref a non-list object as a list");
+        }
+    }
+
+    pub fn deref_list_mut(&mut self, pointer: usize) -> &ObjList {
+        let mut obj = self.deref_mut(pointer);
+        if let HeapObjType::PhoenixList = obj.obj_type {
+            obj.obj.as_list_mut()
+        } else {
+            phoenix_error!("VM panic! Attempted to deref a non-list object as a list");
+        }
+    }
+
+    pub fn deref_string(&self, pointer: usize) -> &ObjString {
+        let mut obj = self.deref(pointer);
+        if let HeapObjType::PhoenixString = obj.obj_type {
+            obj.obj.as_string()
+        } else {
+            phoenix_error!("VM panic! Attempted to deref a non-string object as a string");
+        }
+    }
+
+    pub fn deref_string_mut(&mut self, pointer: usize) -> &mut ObjString {
+        let mut obj = self.deref_mut(pointer);
+        if let HeapObjType::PhoenixString = obj.obj_type {
+            obj.obj.as_string_mut()
+        } else {
+            phoenix_error!("VM panic! Attempted to deref a non-string object as a string");
+        }
+    }
+
+    pub fn create_string(&mut self, s: String) {
+        let string_obj = ObjString::new(s);
+        let string_ptr = self.alloc(HeapObj::new_string(string_obj));
+        self.stack.push(string_ptr);
+    }
+
 
     /// Attempts to
     /// 1. Take the given Value as a PhoenixPointer
@@ -356,7 +400,13 @@ impl VMState {
             Ok(x) => x,
             Err(e) => return Some(e),
         };
-        self.stack.push(result);
+        // check if the value is a PhoneixString and if yes call state.create_string
+        if let Value::PhoenixString(s) = result {
+            self.create_string(s);
+        } else {
+            self.stack.push(result);
+        }
+        // self.stack.push(result);
         None
     }
 
@@ -1106,10 +1156,11 @@ impl VM {
                 OpNil => state.stack.push(Value::Nil),
                 OpAdd => {
                     let t = (state.pop(), state.pop());
-                    if let (Value::PhoenixString(a), Value::PhoenixString(b)) = t {
+                    if let (Value::PhoenixStringPointer(a), Value::PhoenixStringPointer(b)) = t {
+                        let ptr = state.alloc_string(format!("{}{}", state.deref_string(b).value, state.deref_string(a).value));
                         state
                             .stack
-                            .push(Value::PhoenixString(format!("{}{}", b, a)))
+                            .push(ptr)
                     } else if let (Value::Float(a), Value::Float(b)) = t {
                         state.stack.push(Value::Float(a + b))
                     } else if let (Value::Long(a), Value::Long(b)) = t {
@@ -1175,20 +1226,6 @@ impl VM {
                     };
                     let value = state.pop();
                     match value {
-                        Value::PhoenixString(s) => {
-                            let val = match s.chars().nth(index) {
-                                Some(c) => c,
-                                None => {
-                                    self.runtime_error(
-                                        format!("Attempted to index a string with an out-of-bounds index (index: {}, length: {})", index, s.len()).as_str(),
-                                        &state,
-                                        &modules,
-                                    );
-                                    return InterpretResult::InterpretRuntimeError;
-                                }
-                            };
-                            state.stack.push(Value::PhoenixString(val.to_string()));
-                        }
                         Value::PhoenixPointer(list_index) => {
                             // get the list from the allocated lists
                             let v = state.deref_mut(list_index);
@@ -1203,6 +1240,22 @@ impl VM {
                                         return InterpretResult::InterpretRuntimeError;
                                     }
                                     list.values[index].clone()
+                                }
+                                HeapObjVal::PhoenixString(ref s) => {
+                                    let val = match s.value.chars().nth(index) {
+                                        Some(c) => c,
+                                        None => {
+                                            self.runtime_error(
+                                                format!("Attempted to index a string with an out-of-bounds index (index: {}, length: {})", index, s.value.len()).as_str(),
+                                                &state,
+                                                &modules,
+                                            );
+                                            return InterpretResult::InterpretRuntimeError;
+                                        }
+                                    };
+                                    // todo: think about creating an extra type for strings that only have a short life time and put them on the stackk
+                                    let string_obj = ObjString::new(val.to_string());
+                                    state.alloc(HeapObj::new_string(string_obj))
                                 }
                                 _ => {
                                     self.runtime_error(
@@ -1242,51 +1295,17 @@ impl VM {
                         }
                     };
                     // the target (list or string)
-                    let mut target = state.pop();
+                    let target = state.pop();
                     match target {
-                        Value::PhoenixString(s) => {
-                            if s.len() <= index {
-                                self.runtime_error(
-                                    format!("Attempted to index a string with an out-of-bounds index (index: {}, length: {})", index, s.len()).as_str(),
-                                    &state,
-                                    &modules,
-                                );
-                                return InterpretResult::InterpretRuntimeError;
-                            }
-                            if let Value::PhoenixString(new_val) = value {
-                                let mut new_string = String::new();
-                                for (i, c) in s.chars().enumerate() {
-                                    if i == index {
-                                        new_string.push(match new_val.parse() {
-                                            Ok(v) => v,
-                                            Err(_) => {
-                                                self.runtime_error(
-                                                    "Attempted to set a string index to a non-string value",
-                                                    &state,
-                                                    &modules,
-                                                );
-                                                return InterpretResult::InterpretRuntimeError;
-                                            }
-                                        });
-                                    } else {
-                                        new_string.push(c);
-                                    }
-                                }
-                                target = Value::PhoenixString(new_string);
-                            } else {
-                                self.runtime_error(
-                                    "Attempted to set a string index to a non-string value",
-                                    &state,
-                                    &modules,
-                                );
-                                return InterpretResult::InterpretRuntimeError;
-                            }
-                        }
-                        Value::PhoenixPointer(list_index) => {
-                            // get the list from the allocated lists
-                            let v = state.deref_mut(list_index);
-                            match v.obj {
-                                HeapObjVal::PhoenixList(ref mut list) => {
+                        Value::PhoenixPointer(heap_index) => {
+                            // get the heapObject from the allocated lists
+                            let v = state.deref(heap_index);
+                            match &v.obj {
+                                HeapObjVal::PhoenixList(_) => {
+                                    let o = state.deref_mut(heap_index);
+                                    let list = if let HeapObjVal::PhoenixList(list) = &mut o.obj { list } else {
+                                        unreachable!("We just checked that the heap object is a list")
+                                    };
                                     if list.values.len() <= index {
                                         self.runtime_error(
                                             format!("Attempted to index a list with an out-of-bounds index (index: {}, length: {})", index, list.values.len()).as_str(),
@@ -1296,6 +1315,49 @@ impl VM {
                                         return InterpretResult::InterpretRuntimeError;
                                     }
                                     list.values[index] = value;
+                                }
+                                HeapObjVal::PhoenixString(_) => {
+                                    if let Value::PhoenixPointer(new_val) = value {
+                                        let new_val = state.deref_string(new_val).clone();
+                                        let o = state.deref_mut(heap_index);
+                                        let s = if let HeapObjVal::PhoenixString(s) = &mut o.obj { s } else {
+                                            unreachable!("We just checked that the heap object is a string")
+                                        };
+                                        if s.value.len() <= index {
+                                            self.runtime_error(
+                                                format!("Attempted to index a string with an out-of-bounds index (index: {}, length: {})", index, s.value.len()).as_str(),
+                                                &state,
+                                                &modules,
+                                            );
+                                            return InterpretResult::InterpretRuntimeError;
+                                        }
+                                        let mut new_string = String::new();
+                                        for (i, c) in s.value.chars().enumerate() {
+                                            if i == index {
+                                                new_string.push(match new_val.value.parse() {
+                                                    Ok(v) => v,
+                                                    Err(_) => {
+                                                        self.runtime_error(
+                                                            "Attempted to set a string index to a non-string value",
+                                                            &state,
+                                                            &modules,
+                                                        );
+                                                        return InterpretResult::InterpretRuntimeError;
+                                                    }
+                                                });
+                                            } else {
+                                                new_string.push(c);
+                                            }
+                                        }
+                                        s.value = new_string;
+                                    } else {
+                                        self.runtime_error(
+                                            "Attempted to set a string index to a non-string value",
+                                            &state,
+                                            &modules,
+                                        );
+                                        return InterpretResult::InterpretRuntimeError;
+                                    }
                                 }
                                 _ => {
                                     self.runtime_error(
@@ -1316,7 +1378,9 @@ impl VM {
                             return InterpretResult::InterpretRuntimeError;
                         }
                     }
-                    state.stack.push(target);
+                    // todo: find out if this is needed
+                    // state.stack.push(target);
+                    state.stack.push(Value::Nil);
                 }
                 OpCreateList(size) => {
                     let mut list = Vec::new();
@@ -1328,6 +1392,20 @@ impl VM {
                     let list_obj = ObjList::new(list);
                     let ptr = state.alloc(HeapObj::new_list(list_obj));
                     state.stack.push(ptr);
+                }
+                OpCreateString => {
+                    let s = state.pop();
+                    if let Value::PhoenixString(s) = s {
+                        let ptr = state.alloc(HeapObj::new_string(ObjString::new(s)));
+                        state.stack.push(ptr);
+                    } else {
+                        self.runtime_error(
+                            "Attempted to create a string from a non-string value",
+                            &state,
+                            &modules,
+                        );
+                        return InterpretResult::InterpretRuntimeError;
+                    }
                 }
             }
         }

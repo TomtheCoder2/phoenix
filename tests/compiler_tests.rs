@@ -297,7 +297,7 @@ fn complex2() {
 fn calling_function() {
     do_test(
         "print(\"Hello World!\");",
-        vec![PhoenixString("Hello World!".to_string())],
+        vec![PhoenixStringPointer("Hello World!".to_string())],
         vec![],
         vec![
             Instr {
@@ -330,7 +330,7 @@ fn declare_and_call_function() {
         }\
         foo();\
     ",
-        vec![PhoenixString("Hello World!".to_string()), PhoenixFunction(1)],
+        vec![PhoenixStringPointer("Hello World!".to_string()), PhoenixFunction(1)],
         vec!["foo".to_string()],
         vec![
             FunctionChunk {
