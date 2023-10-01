@@ -116,7 +116,7 @@ impl VMState {
     }
 
     pub fn deref_list(&self, pointer: usize) -> &ObjList {
-        let mut obj = self.deref(pointer);
+        let obj = self.deref(pointer);
         if let HeapObjType::PhoenixList = obj.obj_type {
             obj.obj.as_list()
         } else {
@@ -125,7 +125,7 @@ impl VMState {
     }
 
     pub fn deref_list_mut(&mut self, pointer: usize) -> &ObjList {
-        let mut obj = self.deref_mut(pointer);
+        let obj = self.deref_mut(pointer);
         if let HeapObjType::PhoenixList = obj.obj_type {
             obj.obj.as_list_mut()
         } else {
@@ -134,7 +134,7 @@ impl VMState {
     }
 
     pub fn deref_string(&self, pointer: usize) -> &ObjString {
-        let mut obj = self.deref(pointer);
+        let obj = self.deref(pointer);
         if let HeapObjType::PhoenixString = obj.obj_type {
             obj.obj.as_string()
         } else {
@@ -143,7 +143,7 @@ impl VMState {
     }
 
     pub fn deref_string_mut(&mut self, pointer: usize) -> &mut ObjString {
-        let mut obj = self.deref_mut(pointer);
+        let obj = self.deref_mut(pointer);
         if let HeapObjType::PhoenixString = obj.obj_type {
             obj.obj.as_string_mut()
         } else {

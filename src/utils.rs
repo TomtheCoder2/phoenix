@@ -1,4 +1,5 @@
-use crate::value::Value;
+use crate::value::{HeapObjVal, Value};
+use crate::vm::VMState;
 
 /// Convert arg to a float and do some error checks (without casting)
 pub fn to_float(arg: &Value) -> Result<f32, String> {
@@ -39,13 +40,14 @@ pub fn to_bool(arg: &Value) -> Result<bool, String> {
 }
 
 /// Convert arg to a list and some error checks (without casting)
-pub fn to_list(arg: &Value) -> Result<Vec<Value>, String> {
-    todo!("to_list")
-    // match arg.as_list() {
-    //     Some(val) => Ok(val),
-    //     None => Err(format!(
-    //         "Invalid argument: expected list: instead got {}",
-    //         arg.get_type()
-    //     )),
-    // }
+pub fn to_list(arg: &Value, state: &VMState) -> Result<Vec<Value>, String> {
+    if let Value::PhoenixPointer(p) = arg {
+        if let HeapObjVal::PhoenixList(_) = &state.deref(*p).obj {
+            return Ok(state.deref(*p).obj.as_list().values.clone())
+        }
+    }
+    Err(format!(
+        "Invalid argument: expected list: instead got {}",
+        arg.get_type()
+    ))
 }

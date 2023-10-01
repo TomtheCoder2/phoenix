@@ -61,7 +61,7 @@ impl Value {
             Value::Long(x) => format!("{}", x),
             Value::Bool(x) => format!("{}", x),
             Value::PhoenixStringPointer(x) => state.deref(*x).to_string(vm, state, modules),
-            Value::PhoenixString(x) => format!("{}", x),
+            Value::PhoenixString(x) => x.to_string(),
             Value::PhoenixList(x) => state.deref(*x).to_string(vm, state, modules),
             Value::Nil => String::from("nil"),
             Value::PhoenixFunction(x) => format!(
