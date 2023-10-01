@@ -7,8 +7,8 @@ use lz4_compression::prelude::{compress, decompress};
 use crate::compiler::{CompilationResult, Compiler};
 use crate::io::write_to_file;
 use crate::io::{get_file_as_byte_vec, read_file};
-use crate::vm::{ExecutionMode, VM};
-use crate::{debug, error, info, repl, run_file, DEBUG};
+use crate::vm::{debug_print_constants, ExecutionMode, VM};
+use crate::{error, info, repl, run_file, DEBUG};
 
 // Comments on how it works
 // general: phx are scripts and phc are compiled scripts
@@ -50,14 +50,9 @@ enum Commands {
         /// The output file
         #[arg(short, long)]
         output_file: Option<String>,
-    },
-    /// Compile a file (same as build)
-    Compile {
-        /// The file to compile
-        file: String,
-        /// The output file
-        #[arg(short, long)]
-        output_file: Option<String>,
+        /// Debug mode (prints all instructions), default: false
+        #[arg(short, long, action)]
+        debug: bool,
     },
 }
 
@@ -68,14 +63,14 @@ pub fn main() {
             error!("Can't run and build at the same time.");
         }
         match cli.command.unwrap() {
-            Commands::Build { file, output_file } | Commands::Compile { file, output_file } => {
+            Commands::Build { file, output_file, debug} => {
                 // split of phx and append phc
                 let default_output_file = file.split('.').collect::<Vec<&str>>()[0..file.split('.').collect::<Vec<&str>>().len() - 1].join(".") + ".phc";
                 let output_file = output_file.unwrap_or(default_output_file);
                 if file == output_file {
                     error!("The input file and the output file cannot be the same.");
                 }
-                compile(file, output_file);
+                compile(file, output_file, debug);
             }
             Commands::Run { file } => {
                 run_f(file);
@@ -123,7 +118,7 @@ fn compiled_run(input_file: String) {
     vm.run();
 }
 
-fn compile(input_file: String, actual_output_file: String) {
+fn compile(input_file: String, actual_output_file: String, debug: bool) {
     let t1 = Instant::now();
     // compile the code an save it to the output file
     let file_name = input_file;
@@ -134,20 +129,24 @@ fn compile(input_file: String, actual_output_file: String) {
             exit(64);
         }
     };
-    let mut compiler = Compiler::new_file(file_name, code.clone(), true, 0, DEBUG);
-    let res = if let Some(res) = compiler.compile(false) {
+    let mut compiler = Compiler::new_file(file_name, code.clone(), true, 0, debug);
+    let res = if let Some(res) = compiler.compile(debug) {
         res
     } else {
         error!("Compilation failed");
         return;
     };
     let encoded: Vec<u8> = bincode::serialize(&res).unwrap();
+    if debug {
+        debug_print_constants(&res.modules);
+        write_to_file(&format!("{}.uc", &actual_output_file), encoded.clone());
+    }
     info!("Size before compression: {} bytes", encoded.len());
     let compressed_data = compress(&encoded);
     // let decompressed_data = decompress(&compressed_data).unwrap();
     info!("Size after compression: {} bytes", compressed_data.len());
     if DEBUG {
-        debug!("data: {:?}", compressed_data);
+        info!("data: {:?}", compressed_data);
     }
     info!("Size of code: {} bytes", code.len());
     info!("Writing output to {}", actual_output_file);

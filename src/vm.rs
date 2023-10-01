@@ -574,7 +574,7 @@ impl VM {
     pub fn run_state(&mut self, state: Option<VMState>, m: Vec<ModuleChunk>) -> InterpretResult {
         if let ExecutionMode::Trace = self.mode {
             eprintln!("== Starting execution | Mode: {:?} ==", self.mode);
-            debug_print_constants(self, &self.modules_cache);
+            debug_print_constants(&self.modules_cache);
         }
 
         // look at the functions in the first module
@@ -1482,7 +1482,7 @@ fn debug_trace(vm: &VM, instr: &Instr, state: &VMState, modules: &[ModuleChunk])
     eprintln!("---\n");
 }
 
-fn debug_print_constants(_vm: &VM, modules: &[ModuleChunk]) {
+pub fn debug_print_constants(modules: &[ModuleChunk]) {
     eprintln!("---");
     eprintln!("> Constants");
     for m in modules.iter() {
