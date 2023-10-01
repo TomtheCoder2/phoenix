@@ -221,6 +221,19 @@ impl Value {
             self.get_type()
         ))
     }
+
+    /// Convert self to a class and some error checks (without casting), never panics, unlike as_class()
+    pub fn to_class<'a>(&self, state: &'a VMState) -> Result<&'a ObjInstance, String> {
+        if let Value::PhoenixPointer(p) = self {
+            if let HeapObjVal::PhoenixInstance(_) = &state.deref(*p).obj {
+                return Ok(state.deref(*p).obj.as_instance())
+            }
+        }
+        Err(format!(
+            "Invalid argument: expected class: instead got {}",
+            self.get_type()
+        ))
+    }
 }
 
 pub fn is_falsey(val: &Value) -> bool {
