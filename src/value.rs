@@ -171,11 +171,56 @@ impl Value {
         }
     }
 
-    // /// Casts a value to a list, expects a Value::PhoenixPointer
-    // pub fn as_list(&self) -> Vec<Value> {
-    //     let p = self.as_pointer();
-    //
-    // }
+    /// Convert arg to a float and do some error checks (without casting), never panics, unlike as_float()
+    pub fn to_float(&self) -> Result<f32, String> {
+        match self.as_float() {
+            Some(num) => {
+                if num.is_nan() {
+                    return Err("Invalid argument: expected number, got NaN".to_string());
+                }
+                Ok(num)
+            }
+            None => Err(format!(
+                "Invalid argument: expected number: instead got {}",
+                self.get_type()
+            )),
+        }
+    }
+
+    /// Convert arg to a long and do some error checks (without casting), never panics, unlike as_long()
+    pub fn to_long(&self) -> Result<i64, String> {
+        match self.as_long() {
+            Some(num) => Ok(num),
+            None => Err(format!(
+                "Invalid argument: expected number: instead got {}",
+                self.get_type()
+            )),
+        }
+    }
+
+    /// Convert arg to a bool and do some error checks (without casting), never panics, unlike as_bool()
+    pub fn to_bool(&self) -> Result<bool, String> {
+        match self.as_bool() {
+            Some(val) => Ok(val),
+            None => Err(format!(
+                "Invalid argument: expected boolean: instead got {}",
+                self.get_type()
+            )),
+        }
+    }
+
+    /// Convert arg to a list and some error checks (without casting), never panics, unlike as_list()
+    pub fn to_list(&self, state: &VMState) -> Result<Vec<Value>, String> {
+        if let Value::PhoenixPointer(p) = self {
+            if let HeapObjVal::PhoenixList(_) = &state.deref(*p).obj {
+                return Ok(state.deref(*p).obj.as_list().values.clone())
+            }
+        }
+        Err(format!(
+            "Invalid argument: expected list: instead got {}",
+            self.get_type()
+        ))
+    }
 }
 
 pub fn is_falsey(val: &Value) -> bool {
