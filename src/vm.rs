@@ -1179,7 +1179,7 @@ impl VM {
                 OpNil => state.stack.push(Value::Nil),
                 OpAdd => {
                     let t = (state.pop(), state.pop());
-                    if let (Value::PhoenixStringPointer(a), Value::PhoenixStringPointer(b)) = t {
+                    if let (Value::PhoenixPointer(a), Value::PhoenixPointer(b)) = t {
                         let ptr = state.alloc_string(format!("{}{}", state.deref_string(b).value, state.deref_string(a).value));
                         state
                             .stack

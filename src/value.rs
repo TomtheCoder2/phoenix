@@ -14,7 +14,6 @@ pub enum Value {
     Nil,
     // todo: fix this, cause this type is only used for initialisation of strings
     PhoenixString(String),
-    PhoenixStringPointer(usize),
     PhoenixList(usize),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?
     PhoenixFunction(usize),
@@ -61,7 +60,6 @@ impl Value {
             Value::Float(x) => format!("{}", x),
             Value::Long(x) => format!("{}", x),
             Value::Bool(x) => format!("{}", x),
-            Value::PhoenixStringPointer(x) => state.deref(*x).to_string(vm, state, modules),
             Value::PhoenixString(x) => x.to_string(),
             Value::PhoenixList(x) => state.deref(*x).to_string(vm, state, modules),
             Value::Nil => String::from("nil"),
@@ -136,7 +134,7 @@ impl Value {
     }
 
     pub fn as_string<'a>(&'a self, state: &'a VMState) -> Option<&String> {
-        if let Value::PhoenixStringPointer(x) = self {
+        if let Value::PhoenixPointer(x) = self {
             Some(&state.deref_string(*x).value)
         } else {
             None
@@ -149,7 +147,6 @@ impl Value {
             Value::Long(_) => "long",
             Value::Bool(_) => "bool",
             Value::Nil => "nil",
-            Value::PhoenixStringPointer(_) => "string",
             Value::PhoenixFunction(_) => "function",
             Value::PhoenixClass(_) => "class",
             Value::PhoenixList(_) => "list",
@@ -247,7 +244,7 @@ pub fn values_equal(t: (&Value, &Value)) -> bool {
         (Value::Long(x), Value::Long(y)) => x == y,
         (Value::Bool(x), Value::Bool(y)) => x == y,
         (Value::Nil, Value::Nil) => true,
-        (Value::PhoenixStringPointer(x), Value::PhoenixStringPointer(y)) => x.eq(y),
+        (Value::PhoenixString(x), Value::PhoenixString(y)) => x.eq(y),
         (Value::PhoenixPointer(x), Value::PhoenixPointer(y)) => x == y,
         (Value::PhoenixClass(x), Value::PhoenixClass(y)) => x == y,
         (Value::PhoenixFunction(x), Value::PhoenixFunction(y)) => x == y,

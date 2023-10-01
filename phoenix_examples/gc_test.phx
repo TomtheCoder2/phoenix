@@ -1,0 +1,13 @@
+fun test() {
+    var t = "hello";
+    print(t);
+}
+
+var t = "outside";
+print(t);
+test();
+print(t);
+test();
+print(t);
+
+
