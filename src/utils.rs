@@ -1,6 +1,8 @@
 use crate::value::{HeapObjVal, Value};
 use crate::vm::VMState;
 
+// todo: implement these for the value type
+
 /// Convert arg to a float and do some error checks (without casting)
 pub fn to_float(arg: &Value) -> Result<f32, String> {
     match arg.as_float() {

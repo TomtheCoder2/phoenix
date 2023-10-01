@@ -5,8 +5,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::value::Value;
 use crate::value::Value::*;
 use std::collections::HashMap;
+use crate::chunk::ModuleChunk;
+use crate::vm::{VM, VMState};
 
-pub type NativeFn = fn(Vec<Value>) -> Result<Value, String>;
+pub type NativeFn = fn(Vec<Value>, &VM, &mut VMState, &[ModuleChunk]) -> Result<Value, String>;
 
 lazy_static! {
     // format: name, (arity, function) if arity is None, the function is variadic
@@ -15,13 +17,13 @@ lazy_static! {
             ("clock", (Some(0), clock as NativeFn)),
             (
                 "to_string",
-                (Some(1), |args| {
+                (Some(1), |args,_,_,_| {
                     Ok(PhoenixString(value_to_string(&args[0])))
                 })
             ),
             (
                 "type",
-                (Some(1), |args| {
+                (Some(1), |args,_,_,_| {
                     Ok(PhoenixString(args[0].get_type().to_string()))
                 })
             ),
@@ -31,7 +33,7 @@ lazy_static! {
         ]));
 }
 
-pub fn clock(_args: Vec<Value>) -> Result<Value, String> {
+pub fn clock(_args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Result<Value, String> {
     let start = SystemTime::now();
     let since_the_epoch = match start.duration_since(UNIX_EPOCH) {
         Ok(n) => n,
@@ -56,7 +58,7 @@ fn value_to_string(v: &Value) -> String {
 }
 
 /// This formats and prints messages to the console like print!("{} {}", "Hello", "World"); in rust
-fn printf(args: Vec<Value>) -> Result<Value, String> {
+fn printf(args: Vec<Value>, vm: &VM, state: &mut VMState, modules: &[ModuleChunk]) -> Result<Value, String> {
     match &args[0] {
         PhoenixString(s) => {
             // get all {} in the string and replace it with the corresponding argument
@@ -75,7 +77,8 @@ fn printf(args: Vec<Value>) -> Result<Value, String> {
                             args.len()
                         ));
                     }
-                    text.insert_str(i, &value_to_string(args.get(0).unwrap()));
+                    // text.insert_str(i, &value_to_string(args.get(0).unwrap()));
+                    text.insert_str(i, &args.get(0).unwrap().to_string(vm, state, &modules.to_vec()));
                     args.remove(0);
                 }
                 i += 1;
@@ -90,7 +93,7 @@ fn printf(args: Vec<Value>) -> Result<Value, String> {
     Ok(Nil)
 }
 
-pub fn int(args: Vec<Value>) -> Result<Value, String> {
+pub fn int(args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Result<Value, String> {
     Ok(match &args[0] {
         Float(f) => Long(*f as i64),
         Long(l) => Long(*l),
@@ -110,7 +113,7 @@ pub fn int(args: Vec<Value>) -> Result<Value, String> {
     })
 }
 
-pub fn float(args: Vec<Value>) -> Result<Value, String> {
+pub fn float(args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Result<Value, String> {
     Ok(match &args[0] {
         Float(f) => Float(*f),
         Long(l) => Float(*l as f32),

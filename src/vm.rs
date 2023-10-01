@@ -281,9 +281,11 @@ impl VMState {
         arg_count: usize,
         function_defs: &[FunctionChunk],
         class_defs: &[ClassChunk],
-        init_slot: &Option<usize>,
         _module: &ModuleChunk,
+        vm: &VM,
+        modules: &[ModuleChunk],
     ) -> Option<String> {
+        let init_slot = vm.init_slot;
         let callee = self.peek_at(arg_count);
         if let Value::PhoenixPointer(_) = callee {
             match self.deref_into(callee, HeapObjType::PhoenixClosure) {
@@ -333,7 +335,7 @@ impl VMState {
             }
         } else if let Value::NativeFunction(native_arg_count, native_fn) = callee {
             let native_fn = *native_fn;
-            self.call_native(&native_fn, arg_count, *native_arg_count)
+            self.call_native(&native_fn, arg_count, *native_arg_count, vm, modules)
         } else {
             Some(String::from("Can only call functions and classes"))
         }
@@ -381,6 +383,8 @@ impl VMState {
         native_fn: &NativeFn,
         arg_count: usize,
         native_arg_count: Option<usize>,
+        vm: &VM,
+        modules: &[ModuleChunk],
     ) -> Option<String> {
         let mut args: Vec<Value> = Vec::new();
         for _ in 0..arg_count {
@@ -396,7 +400,7 @@ impl VMState {
                 ));
             }
         }
-        let result = match native_fn(args) {
+        let result = match native_fn(args, vm, self, modules) {
             Ok(x) => x,
             Err(e) => return Some(e),
         };
@@ -580,6 +584,7 @@ impl VM {
             VMState::new(&self.modules_cache[0].identifiers)
         };
         state.define_std_lib(&self.modules_cache[0].identifiers);
+        // todo: maybe move this to VMState
         let modules = self.modules_cache.clone();
         self.modules_cache = m;
         // todo: make this work with modules
@@ -733,8 +738,9 @@ impl VM {
                                 arity,
                                 &modules[state.current_frame.module].functions,
                                 &modules[state.current_frame.module].classes,
-                                &self.init_slot,
                                 &modules[state.current_frame.module],
+                                self,
+                                &modules,
                             );
 
                             if let Some(msg) = result {
@@ -871,8 +877,9 @@ impl VM {
                                         arg_count,
                                         &modules[state.current_frame.module].functions,
                                         &modules[state.current_frame.module].classes,
-                                        &self.init_slot,
                                         &modules[state.current_frame.module],
+                                        self,
+                                        &modules,
                                     )
                                     // Perform the call
                                 } else if class_def.methods.contains_key(&name_index) {
@@ -1131,8 +1138,9 @@ impl VM {
                         arity,
                         &modules[state.current_frame.module].functions,
                         &modules[state.current_frame.module].classes,
-                        &self.init_slot,
                         &modules[state.current_frame.module],
+                        self,
+                        &modules,
                     );
                     current_code = &modules[state.current_frame.module]
                         .functions
