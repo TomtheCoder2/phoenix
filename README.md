@@ -64,7 +64,8 @@ printf("element {} is at index: {}", search, binary_search([1, 3, 5, 7, 9], 7));
 * [ ] Add more documentation
 * [ ] Add more error handling
 * [ ] Fix lists (not working: access of lists in classes eg: `c.l[0] = 1;`)
-* [ ] Fix REPL
+* [x] Fix REPL
 * [ ] Fix modules (not working: classes)
 * [x] Implement `[+-*/]=`, `i++` and `i--`
 * [ ] Better "api" for native functions
+* [ ] Add LLVM support

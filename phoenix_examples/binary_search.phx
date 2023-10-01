@@ -22,10 +22,10 @@ var elements = [];
 var n = 1000;
 var t1 = clock();
 for (var i = 0; i < n; i++) {
-  elements.push(rand_int(0, i + 1));
+  elements.push(rand_int(0, n));
 }
 elements.sort();
-// printf("elements: {}", elements);
+printf("elements: {}", elements);
 var t2 = clock();
 printf("time taken to create array: {} ms", t2 - t1);
 var search = elements[n / 2];

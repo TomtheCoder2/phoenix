@@ -7,6 +7,7 @@ use crate::value::Value::*;
 use std::collections::HashMap;
 use crate::chunk::ModuleChunk;
 use crate::vm::{VM, VMState};
+use rand::Rng;
 
 // todo: create methods for eg lists, classes or strings and replace the hard coded versions in the vm (push, pop, len, etc)
 pub type NativeFn = fn(Vec<Value>, &VM, &mut VMState, &[ModuleChunk]) -> Result<Value, String>;
@@ -52,7 +53,7 @@ lazy_static! {
                 if min - max == 0 {
                     return Err("min and max cannot be the same!".to_string());
                 }
-                Ok(Long(rand::random::<i64>() % (max - min) + min))
+                Ok(Long(rand::thread_rng().gen_range(min..max)))
             })),
             ("rand_float", (Some(2), |args,_,_,_| {
                 let min = match args[0] {
@@ -69,7 +70,7 @@ lazy_static! {
                         return Err(format!("Expected int or float as second argument, got {}", args[1].get_type()));
                     }
                 };
-                Ok(Float(rand::random::<f32>() % (max - min) + min))
+                Ok(Float(rand::thread_rng().gen_range(min..max)))
             })),
         ]));
 }
