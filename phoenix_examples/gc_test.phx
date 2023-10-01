@@ -1,13 +1,17 @@
 fun test() {
-    var t = "hello";
-    print(t);
+    var inside = "inside";
+    print(inside);
 }
 
-var t = "outside";
-print(t);
+var outside = "outside";
+print(outside);
 test();
-print(t);
+print(outside);
 test();
-print(t);
+print(outside);
+for (var i = 0; i < 500; i++) {
+    print(i);
+    test();
+}
 
 

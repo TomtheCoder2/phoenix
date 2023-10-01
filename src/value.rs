@@ -13,6 +13,7 @@ pub enum Value {
     Bool(bool),
     Nil,
     // todo: fix this, cause this type is only used for initialisation of strings
+    // todo: create static strings, for example for prints, so we can allocate them once and have multiple references to them
     PhoenixString(String),
     PhoenixList(usize),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?

@@ -30,9 +30,9 @@ const SHRINK_THRESHOLD: f32 = 0.75; // Shrink if new_size < current_size * shrin
 ///   => Ideally we would not but since the free_slots stack is not ordered in any way we don't have any guarantees
 ///
 /// This would get rid of most of the placeholder values but with a few problems
-/// A. The memory usage of the placeholders is minimal already
-/// B. Placeholders don't necessarily "leak", ie: running the program for a long enough time will not cause a memory shortage unless the code itself had used that much memory without GC'ing
-/// C. Linked lists and doing those traversals will undoubtedly be slower than the current Vec implementation, will it even be worth it?
+/// * A) The memory usage of the placeholders is minimal already
+/// * B) Placeholders don't necessarily "leak", ie: running the program for a long enough time will not cause a memory shortage unless the code itself had used that much memory without GC'ing
+/// * C) Linked lists and doing those traversals will undoubtedly be slower than the current Vec implementation, will it even be worth it?
 ///
 /// All in all, I think I'll need to wait until I have some code to profile.
 #[derive(Debug, Clone)]
@@ -313,6 +313,7 @@ impl GC {
 
         //self.unmarked = !self.unmarked; // Flip for the next gc run
         if DEBUG_GC {
+            dbg!(&self.instances);
             eprintln!("--- gc end")
         }
     }
