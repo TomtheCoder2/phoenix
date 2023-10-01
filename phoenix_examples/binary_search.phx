@@ -19,16 +19,22 @@ fun binary_search(list, item) {
 }
 
 var elements = [];
-var n = 10;
+var n = 1000;
 var t1 = clock();
 for (var i = 0; i < n; i++) {
-  elements.push(i);
+  elements.push(rand_int(0, i + 1));
 }
+elements.sort();
+// printf("elements: {}", elements);
 var t2 = clock();
 printf("time taken to create array: {} ms", t2 - t1);
-var search = n /2;
+var search = elements[n / 2];
 var t1 = clock();
 var index = binary_search(elements, search);
 var t2 = clock();
-printf("element {} is at index: {}", search, index);
+if index == nil {
+    printf("element {} not found", search);
+} else {
+    printf("element {} is at index: {}", search, index);
+}
 printf("time taken: {} ms", t2 - t1);

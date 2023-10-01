@@ -928,6 +928,21 @@ impl VM {
                                                         let len = list.values.len() as i64;
                                                         state.stack.push(Value::Long(len));
                                                     }
+                                                    "sort" => {
+                                                        list.values.sort_by(|a, b| {
+                                                            if let Value::Float(a) = a {
+                                                                if let Value::Float(b) = b {
+                                                                    return a.partial_cmp(b).unwrap();
+                                                                }
+                                                            }
+                                                            if let Value::Long(a) = a {
+                                                                if let Value::Long(b) = b {
+                                                                    return a.partial_cmp(b).unwrap();
+                                                                }
+                                                            }
+                                                            panic!("Attempted to sort a list with non-numeric values");
+                                                        });
+                                                    }
                                                     _ => {
                                                         self.runtime_error(
                                                             format!("Function {} not found on list", &*modules[curr_module].identifiers[name_index]).as_str(),
