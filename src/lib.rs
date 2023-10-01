@@ -151,4 +151,8 @@ pub fn run_file(filename: String, debug: bool) -> InterpretResult {
     }
 }
 
+#[cfg(feature = "debug")]
 pub const DEBUG: bool = true;
+
+#[cfg(not(feature = "debug"))]
+pub const DEBUG: bool = false;

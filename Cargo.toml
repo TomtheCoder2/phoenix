@@ -21,3 +21,7 @@ lz4-compression = "0.7.0"
 colored = "2"
 
 
+[features]
+debug = []
+
+
