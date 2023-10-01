@@ -107,7 +107,13 @@ fn compiled_run(input_file: String) {
             exit(64);
         }
     };
-    let decompressed_data = decompress(&binary_data).unwrap();
+    let decompressed_data = match decompress(&binary_data) {
+        Ok(s) => s,
+        Err(e) => {
+            error!("Error decompressing file: {:?}", e);
+            exit(64);
+        }
+    };
     let decoded: CompilationResult = bincode::deserialize(&decompressed_data[..]).unwrap();
     let mut vm = if DEBUG {
         VM::new(ExecutionMode::Trace, decoded, false)

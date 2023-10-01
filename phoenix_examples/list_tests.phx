@@ -1,0 +1,8 @@
+var elements = [];
+var n = 100000;
+var t1 = clock();
+for (var i = 0; i < n; i++) {
+  elements.push(i);
+}
+var t2 = clock();
+printf("time taken to create array: {} ms", t2 - t1);

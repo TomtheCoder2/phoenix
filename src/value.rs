@@ -12,6 +12,7 @@ pub enum Value {
     Long(i64),
     Bool(bool),
     Nil,
+    // todo: fix this, cause this type is only used for initialisation of strings
     PhoenixString(String),
     PhoenixStringPointer(usize),
     PhoenixList(usize),

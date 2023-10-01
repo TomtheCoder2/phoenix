@@ -29,7 +29,44 @@ lazy_static! {
             ),
             ("printf", (None, printf as NativeFn)),
             ("int", (Some(1), int as NativeFn)),
-            ("float", (Some(1), float as NativeFn))
+            ("float", (Some(1), float as NativeFn)),
+            ("rand", (Some(0), |_,_,_,_| {
+                Ok(Float(rand::random::<f32>()))
+            })),
+            ("rand_int", (Some(2), |args,_,_,_| {
+                let min = match args[0] {
+                    Float(f) => f as i32,
+                    Long(l) => l as i32,
+                    _ => {
+                        return Err(format!("Expected int or float as first argument, got {}", args[0].get_type()));
+                    }
+                } as i64;
+                let max = match args[1] {
+                    Float(f) => f as i32,
+                    Long(l) => l as i32,
+                    _ => {
+                        return Err(format!("Expected int or float as second argument, got {}", args[1].get_type()));
+                    }
+                } as i64;
+                Ok(Long(rand::random::<i64>() % (max - min) + min))
+            })),
+            ("rand_float", (Some(2), |args,_,_,_| {
+                let min = match args[0] {
+                    Float(f) => f,
+                    Long(l) => l as f32,
+                    _ => {
+                        return Err(format!("Expected int or float as first argument, got {}", args[0].get_type()));
+                    }
+                };
+                let max = match args[1] {
+                    Float(f) => f,
+                    Long(l) => l as f32,
+                    _ => {
+                        return Err(format!("Expected int or float as second argument, got {}", args[1].get_type()));
+                    }
+                };
+                Ok(Float(rand::random::<f32>() % (max - min) + min))
+            })),
         ]));
 }
 
@@ -60,7 +97,8 @@ fn value_to_string(v: &Value) -> String {
 /// This formats and prints messages to the console like print!("{} {}", "Hello", "World"); in rust
 fn printf(args: Vec<Value>, vm: &VM, state: &mut VMState, modules: &[ModuleChunk]) -> Result<Value, String> {
     match &args[0] {
-        PhoenixString(s) => {
+        PhoenixPointer(p) => {
+            let s = &state.deref_string(*p).value;
             // get all {} in the string and replace it with the corresponding argument
             let mut args = args.clone();
             args.remove(0);
