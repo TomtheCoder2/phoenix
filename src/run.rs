@@ -19,10 +19,10 @@ use crate::{error, info, repl, run_file, DEBUG};
 
 #[derive(Parser, Debug)]
 #[command(
-    author,
-    version,
-    about,
-    long_about = "The compiler and interpreter for the phoenix programming language.\n\n\
+author,
+version,
+about,
+long_about = "The compiler and interpreter for the phoenix programming language.\n\n\
 To simply interpret a file, give it as the [input file] parameter.\n
 To compile to a phc file, specify an output file with the output-file flag.\n
 To start the REPL, simply dont provide any arguments.\n"
@@ -154,6 +154,10 @@ fn compile(input_file: String, actual_output_file: String, debug: bool) {
     info!("Size after compression: {} bytes", compressed_data.len());
     if DEBUG {
         info!("data: {:?}", compressed_data);
+        #[cfg(feature = "debug")]{
+            write_to_file(&format!("{}.toml", &actual_output_file), toml::to_string(&res).unwrap().as_bytes().to_vec());
+            write_to_file(&format!("{}.ron", &actual_output_file), ron::to_string(&res).unwrap().as_bytes().to_vec());
+        }
     }
     info!("Size of code: {} bytes", code.len());
     info!("Writing output to {}", actual_output_file);

@@ -21,9 +21,11 @@ lz4-compression = "0.7.0"
 colored = "2"
 rand = "0.8.4"
 strum_macros = "0.25.2"
+toml = { version = "0.8.2", optional = true }
+ron = {version= "0.8.1",optional = true }
 
 
 [features]
-debug = []
+debug = ["toml", "ron"]
 
 
