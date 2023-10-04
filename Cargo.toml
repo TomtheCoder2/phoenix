@@ -20,6 +20,7 @@ clap = { version = "4.2.1", features = ["derive"] }
 lz4-compression = "0.7.0"
 colored = "2"
 rand = "0.8.4"
+strum_macros = "0.25.2"
 
 
 [features]

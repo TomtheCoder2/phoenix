@@ -10,7 +10,7 @@ use crate::chunk::CompilerModuleChunk;
 use crate::chunk::OpCode::*;
 use crate::chunk::{Chunk, ClassChunk, FunctionChunk, FunctionType, Instr, ModuleChunk, OpCode};
 use crate::debug::{disassemble_class_chunk, disassemble_fn_chunk};
-use crate::native::NATIVE_FUNCTIONS;
+use crate::native::native_functions::NATIVE_FUNCTIONS;
 use crate::precedence::{get_rule, ParseFn, Precedence};
 
 use crate::scanner::{Scanner, Token, TokenType};
@@ -1252,10 +1252,22 @@ impl Compiler {
 
     #[deprecated(note = "Use new instead")]
     pub fn new_default(code: String, quiet: bool, start_line: usize) -> Compiler {
-        Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, quiet, start_line, false)
+        Compiler::new_file(
+            DEFAULT_FILE_NAME.to_string(),
+            code,
+            quiet,
+            start_line,
+            false,
+        )
     }
 
-    pub fn new_file(file: String, code: String, quiet: bool, start_line: usize, debug_mode: bool) -> Compiler {
+    pub fn new_file(
+        file: String,
+        code: String,
+        quiet: bool,
+        start_line: usize,
+        debug_mode: bool,
+    ) -> Compiler {
         let mut compiler = Compiler {
             modules: vec![CompilerModuleChunk::new(
                 true,

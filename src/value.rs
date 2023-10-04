@@ -3,26 +3,30 @@ use std::collections::HashMap;
 use crate::chunk::ModuleChunk;
 use serde::{Deserialize, Serialize};
 
-use crate::native::NativeFn;
+use crate::native::native_functions::NativeFn;
+use crate::native::native_methods::NativeMethod;
 use crate::vm::{VMState, VM};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub enum Value {
     Float(f32),
     Long(i64),
     Bool(bool),
+    #[default]
     Nil,
     // todo: fix this, cause this type is only used for initialisation of strings
     // todo: create static strings, for example for prints, so we can allocate them once and have multiple references to them
     PhoenixString(String),
-    PhoenixList(usize),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?
     PhoenixFunction(usize),
     #[serde(skip)]
     NativeFunction(Option<usize>, NativeFn),
+    #[serde(skip)]
+    NativeMethod(Option<usize>, NativeMethod),
     PhoenixClass(usize),
     // similar to class, but for modules
     PhoenixModule(usize),
+    // for strings, instances and lists
     PhoenixPointer(usize),
     PhoenixBoundMethod(ObjBoundMethod),
 }
@@ -62,7 +66,6 @@ impl Value {
             Value::Long(x) => format!("{}", x),
             Value::Bool(x) => format!("{}", x),
             Value::PhoenixString(x) => x.to_string(),
-            Value::PhoenixList(x) => state.deref(*x).to_string(vm, state, modules),
             Value::Nil => String::from("nil"),
             Value::PhoenixFunction(x) => format!(
                 "<fn {}>",
@@ -75,6 +78,7 @@ impl Value {
                     .unwrap()
             ),
             Value::NativeFunction(_x, _) => "<native_fn>".to_string(),
+            Value::NativeMethod(_x, _) => "<native_method>".to_string(),
             Value::PhoenixClass(class) => format!("<class {}>", class),
             Value::PhoenixPointer(pointer) => {
                 // hacky way to check if this is a list or string
@@ -150,7 +154,6 @@ impl Value {
             Value::Nil => "nil",
             Value::PhoenixFunction(_) => "function",
             Value::PhoenixClass(_) => "class",
-            Value::PhoenixList(_) => "list",
             Value::NativeFunction(_, _) => "native_function",
             Value::PhoenixPointer(_) => "pointer",
             Value::PhoenixBoundMethod(_) => "bound_method",
@@ -212,7 +215,7 @@ impl Value {
     pub fn to_list(&self, state: &VMState) -> Result<Vec<Value>, String> {
         if let Value::PhoenixPointer(p) = self {
             if let HeapObjVal::PhoenixList(_) = &state.deref(*p).obj {
-                return Ok(state.deref(*p).obj.as_list().values.clone())
+                return Ok(state.deref(*p).obj.as_list().values.clone());
             }
         }
         Err(format!(
@@ -225,7 +228,7 @@ impl Value {
     pub fn to_class<'a>(&self, state: &'a VMState) -> Result<&'a ObjInstance, String> {
         if let Value::PhoenixPointer(p) = self {
             if let HeapObjVal::PhoenixInstance(_) = &state.deref(*p).obj {
-                return Ok(state.deref(*p).obj.as_instance())
+                return Ok(state.deref(*p).obj.as_instance());
             }
         }
         Err(format!(

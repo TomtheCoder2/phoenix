@@ -330,7 +330,10 @@ fn declare_and_call_function() {
         }\
         foo();\
     ",
-        vec![PhoenixStringPointer("Hello World!".to_string()), PhoenixFunction(1)],
+        vec![
+            PhoenixStringPointer("Hello World!".to_string()),
+            PhoenixFunction(1),
+        ],
         vec!["foo".to_string()],
         vec![
             FunctionChunk {

@@ -1,0 +1,6 @@
+class H {}
+var h = H();
+print(h.to_string());
+var l = [];
+l.push(1);
+print(l);

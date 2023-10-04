@@ -3,9 +3,13 @@ use crate::chunk::{ClassChunk, FunctionChunk, Instr, ModuleChunk};
 use crate::compiler::CompilationResult;
 use crate::debug::*;
 use crate::gc::GC;
-use crate::native::*;
+use crate::native::native_functions::*;
+use crate::native::native_methods::{NativeMethod, NATIVE_METHODS};
 use crate::resolver::UpValue;
-use crate::value::{is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure, ObjInstance, ObjList, Value, ObjString};
+use crate::value::{
+    is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure,
+    ObjInstance, ObjList, ObjString, Value,
+};
 use crate::{error, phoenix_error, warn, InterpretResult, VERSION};
 use std::collections::HashMap;
 
@@ -106,7 +110,7 @@ impl VMState {
         }
     }
 
-    fn deref_mut(&mut self, pointer: usize) -> &mut HeapObj {
+    pub fn deref_mut(&mut self, pointer: usize) -> &mut HeapObj {
         match self.gc.instances.get_mut(pointer) {
             Some(x) => x,
             None => {
@@ -156,7 +160,6 @@ impl VMState {
         let string_ptr = self.alloc(HeapObj::new_string(string_obj));
         self.stack.push(string_ptr);
     }
-
 
     /// Attempts to
     /// 1. Take the given Value as a PhoenixPointer
@@ -218,7 +221,7 @@ impl VMState {
                 phoenix_error!("VM panic! Unable to get current closure?");
             }
         }
-            .clone();
+        .clone();
         match self.deref_into_mut(&pointer_val, HeapObjType::PhoenixClosure) {
             Ok(closure_obj) => closure_obj.as_closure_mut(),
             Err(x) => {
@@ -259,7 +262,7 @@ impl VMState {
                 phoenix_error!("VM panic! Attempted to push an upvalue that doesn't exist");
             }
         }
-            .clone();
+        .clone();
         self.stack.push(val);
     }
 
@@ -414,6 +417,53 @@ impl VMState {
         None
     }
 
+    /// Attempts to call a native (rust) method
+    /// returns: If first Option is None, the method doesnt support this type, if the second Option is None, the function was successfully
+    fn call_method(
+        &mut self,
+        native_method: &NativeMethod,
+        arg_count: usize,
+        native_arg_count: Option<usize>,
+        vm: &VM,
+        modules: &[ModuleChunk],
+    ) -> Option<Option<String>> {
+        // println!(
+        //     "calling method, arg_count: {}, stack: {:?}",
+        //     arg_count, self.stack
+        // );
+        // we need know the stack looks like this: self | arg1 | arg2 | ... | argn
+        let mut args: Vec<Value> = Vec::new();
+        for _ in 0..arg_count {
+            args.push(self.pop());
+        }
+        // self.pop(); // Pop off the Value::NativeFunction
+        args.reverse();
+        let this = self.pop();
+        if let Some(n_a_count) = native_arg_count {
+            if arg_count != n_a_count {
+                return Some(Some(format!(
+                    "Expected {} arguments but got {} instead",
+                    n_a_count, arg_count
+                )));
+            }
+        }
+        let result = match native_method(this, args, vm, self, modules) {
+            Some(x) => match x {
+                Ok(x) => x,
+                Err(e) => return Some(Some(e)),
+            },
+            None => return None,
+        };
+        // check if the value is a PhoenixString and if yes call state.create_string
+        if let Value::PhoenixString(s) = result {
+            self.create_string(s);
+        } else {
+            self.stack.push(result);
+        }
+        // self.stack.push(result);
+        Some(None)
+    }
+
     /// Defines all native functions
     ///
     /// Searches for references to native functions and adds them in if they're used in the program
@@ -422,7 +472,7 @@ impl VMState {
             Ok(x) => x,
             Err(_) => phoenix_error!("Failed to lock native functions mutex"),
         }
-            .iter()
+        .iter()
         {
             if let Some(index) = identifiers.iter().position(|x| x == str) {
                 self.globals[self.current_frame.module][index] =
@@ -503,7 +553,9 @@ impl VM {
             .identifiers
             .iter()
             .position(|x| x == "init");
-        if !self.modules_cache.is_empty() { self.modules_cache[0].functions[0].chunk.code.pop(); }
+        if !self.modules_cache.is_empty() {
+            self.modules_cache[0].functions[0].chunk.code.pop();
+        }
         self.modules_cache.extend(result.modules);
         self.modules_table.extend(result.modules_table);
         self.init_slot = init_slot;
@@ -721,8 +773,7 @@ impl VM {
                 }
                 OpDefineGlobal(index) => {
                     let var_val = state.pop();
-                    state.globals[state.current_frame.module]
-                        [index] = Global::Init(var_val);
+                    state.globals[state.current_frame.module][index] = Global::Init(var_val);
                 }
                 OpCallGlobal(module_index, index, arity) => {
                     let cur_module = state.current_frame.module;
@@ -765,7 +816,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                    .as_str(),
+                                .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -786,7 +837,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                    .as_str(),
+                                .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -808,7 +859,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                    .as_str(),
+                                .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -830,7 +881,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                    .as_str(),
+                                .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -899,9 +950,8 @@ impl VM {
                                     ))
                                 }
                             }
-                            HeapObjVal::PhoenixList(_) => {
+                            /*HeapObjVal::PhoenixList(_) => {
                                 // check if its a list
-                                let value = state.pop();
                                 let curr_module = state.current_frame.module;
                                 // we need to deref the pointer to get the actual list
                                 match state.deref_into_mut(&pointer_val, HeapObjType::PhoenixList) {
@@ -909,9 +959,9 @@ impl VM {
                                         match list {
                                             HeapObjVal::PhoenixList(ref mut list) => {
                                                 match &*modules[curr_module].identifiers[name_index] {
-                                                    "push" => {
-                                                        list.values.push(value);
-                                                    }
+                                                    // "push" => {
+                                                    //     list.values.push(value);
+                                                    // }
                                                     "pop" => {
                                                         if let Some(val) = list.values.pop() {
                                                             state.stack.push(val);
@@ -923,10 +973,12 @@ impl VM {
                                                             );
                                                             return InterpretResult::InterpretRuntimeError;
                                                         }
+                                                        None
                                                     }
                                                     "len" => {
                                                         let len = list.values.len() as i64;
                                                         state.stack.push(Value::Long(len));
+                                                        None
                                                     }
                                                     "sort" => {
                                                         list.values.sort_by(|a, b| {
@@ -942,16 +994,18 @@ impl VM {
                                                             }
                                                             panic!("Attempted to sort a list with non-numeric values");
                                                         });
+                                                        None
                                                     }
                                                     _ => {
-                                                        self.runtime_error(
-                                                            format!("Function {} not found on list", &*modules[curr_module].identifiers[name_index]).as_str(),
-                                                            &state,
-                                                            &modules,
-                                                        );
-                                                        return InterpretResult::InterpretRuntimeError;
+                                                        // self.runtime_error(
+                                                        //     format!("Function {} not found on list", &*modules[curr_module].identifiers[name_index]).as_str(),
+                                                        //     &state,
+                                                        //     &modules,
+                                                        // );
+                                                        // return InterpretResult::InterpretRuntimeError;
+                                                        Some(format!("Function \"{}\" not found on list", &*modules[curr_module].identifiers[name_index]))
                                                     }
-                                                };
+                                                }
                                             }
                                             _ => {
                                                 self.runtime_error(
@@ -961,8 +1015,7 @@ impl VM {
                                                 );
                                                 return InterpretResult::InterpretRuntimeError;
                                             }
-                                        };
-                                        None
+                                        }
                                     }
                                     Err(_) => {
                                         Some(String::from(
@@ -970,7 +1023,7 @@ impl VM {
                                         ))
                                     }
                                 }
-                            }
+                            }*/
                             _ => Some(format!(
                                 "Can only invoke methods on instances and lists, not {:?}",
                                 obj
@@ -978,8 +1031,47 @@ impl VM {
                         };
 
                     if let Some(error) = result {
-                        self.runtime_error(error.as_str(), &state, &modules);
-                        return InterpretResult::InterpretRuntimeError;
+                        let result = if NATIVE_METHODS.lock().unwrap().contains_key(
+                            modules[state.current_frame.module].identifiers[name_index].as_str(),
+                        ) {
+                            // println!("found method in native methods");
+                            let native_methods = NATIVE_METHODS.lock().unwrap();
+                            let native_method = native_methods
+                                .get(
+                                    modules[state.current_frame.module].identifiers[name_index]
+                                        .as_str(),
+                                )
+                                .unwrap();
+                            if native_method.0.is_some() && native_method.0.unwrap() != arg_count {
+                                Some(format!(
+                                    "Expected {} arguments but got {} instead",
+                                    native_method.0.unwrap(),
+                                    arg_count
+                                ))
+                            } else {
+                                let result = state.call_method(
+                                    &native_method.1,
+                                    arg_count,
+                                    native_method.0,
+                                    self,
+                                    &modules,
+                                );
+                                if result.is_none() {
+                                    Some(error)
+                                } else if let Some(Some(msg)) = result {
+                                    self.runtime_error(&msg[..], &state, &modules);
+                                    return InterpretResult::InterpretRuntimeError;
+                                } else {
+                                    None
+                                }
+                            }
+                        } else {
+                            Some(error)
+                        };
+                        if let Some(error) = result {
+                            self.runtime_error(error.as_str(), &state, &modules);
+                            return InterpretResult::InterpretRuntimeError;
+                        }
                     }
                     current_code = &modules[state.current_frame.module]
                         .functions
@@ -1018,7 +1110,7 @@ impl VM {
                                             VM::get_variable_name(name_index, &state, &modules),
                                             instance
                                         )
-                                            .as_str(),
+                                        .as_str(),
                                         &state,
                                         &modules,
                                     );
@@ -1087,7 +1179,7 @@ impl VM {
                                                 .unwrap()
                                                 .name,
                                         )
-                                            .as_str(),
+                                        .as_str(),
                                         &state,
                                         &modules,
                                     );
@@ -1180,10 +1272,12 @@ impl VM {
                 OpAdd => {
                     let t = (state.pop(), state.pop());
                     if let (Value::PhoenixPointer(a), Value::PhoenixPointer(b)) = t {
-                        let ptr = state.alloc_string(format!("{}{}", state.deref_string(b).value, state.deref_string(a).value));
-                        state
-                            .stack
-                            .push(ptr)
+                        let ptr = state.alloc_string(format!(
+                            "{}{}",
+                            state.deref_string(b).value,
+                            state.deref_string(a).value
+                        ));
+                        state.stack.push(ptr)
                     } else if let (Value::Float(a), Value::Float(b)) = t {
                         state.stack.push(Value::Float(a + b))
                     } else if let (Value::Long(a), Value::Long(b)) = t {
@@ -1326,8 +1420,12 @@ impl VM {
                             match &v.obj {
                                 HeapObjVal::PhoenixList(_) => {
                                     let o = state.deref_mut(heap_index);
-                                    let list = if let HeapObjVal::PhoenixList(list) = &mut o.obj { list } else {
-                                        unreachable!("We just checked that the heap object is a list")
+                                    let list = if let HeapObjVal::PhoenixList(list) = &mut o.obj {
+                                        list
+                                    } else {
+                                        unreachable!(
+                                            "We just checked that the heap object is a list"
+                                        )
                                     };
                                     if list.values.len() <= index {
                                         self.runtime_error(
@@ -1343,8 +1441,12 @@ impl VM {
                                     if let Value::PhoenixPointer(new_val) = value {
                                         let new_val = state.deref_string(new_val).clone();
                                         let o = state.deref_mut(heap_index);
-                                        let s = if let HeapObjVal::PhoenixString(s) = &mut o.obj { s } else {
-                                            unreachable!("We just checked that the heap object is a string")
+                                        let s = if let HeapObjVal::PhoenixString(s) = &mut o.obj {
+                                            s
+                                        } else {
+                                            unreachable!(
+                                                "We just checked that the heap object is a string"
+                                            )
                                         };
                                         if s.value.len() <= index {
                                             self.runtime_error(

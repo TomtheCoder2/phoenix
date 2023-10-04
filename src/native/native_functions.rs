@@ -2,14 +2,15 @@ use lazy_static::lazy_static;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use crate::chunk::ModuleChunk;
 use crate::value::Value;
 use crate::value::Value::*;
-use std::collections::HashMap;
-use crate::chunk::ModuleChunk;
-use crate::vm::{VM, VMState};
+use crate::vm::{VMState, VM};
 use rand::Rng;
+use std::collections::HashMap;
 
 // todo: create methods for eg lists, classes or strings and replace the hard coded versions in the vm (push, pop, len, etc)
+// todo: maybe create a struct for the args
 pub type NativeFn = fn(Vec<Value>, &VM, &mut VMState, &[ModuleChunk]) -> Result<Value, String>;
 
 lazy_static! {
@@ -19,8 +20,8 @@ lazy_static! {
             ("clock", (Some(0), clock as NativeFn)),
             (
                 "to_string",
-                (Some(1), |args,_,_,_| {
-                    Ok(PhoenixString(value_to_string(&args[0])))
+                (Some(1), |args,vm,state,modules| {
+                    Ok(PhoenixString(args[0].to_string(vm, state, &modules.to_vec())))
                 })
             ),
             (
@@ -75,7 +76,12 @@ lazy_static! {
         ]));
 }
 
-pub fn clock(_args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Result<Value, String> {
+pub fn clock(
+    _args: Vec<Value>,
+    _: &VM,
+    _: &mut VMState,
+    _: &[ModuleChunk],
+) -> Result<Value, String> {
     let start = SystemTime::now();
     let since_the_epoch = match start.duration_since(UNIX_EPOCH) {
         Ok(n) => n,
@@ -86,8 +92,8 @@ pub fn clock(_args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> R
     // println!("debug: time: {}", since_the_epoch.as_millis());
     Ok(Long(since_the_epoch.as_millis() as i64))
 }
-
-fn value_to_string(v: &Value) -> String {
+#[allow(dead_code)]
+pub fn value_to_string(v: &Value) -> String {
     match v {
         Float(x) => format!("{}", x),
         Long(x) => format!("{}", x),
@@ -100,7 +106,12 @@ fn value_to_string(v: &Value) -> String {
 }
 
 /// This formats and prints messages to the console like print!("{} {}", "Hello", "World"); in rust
-fn printf(args: Vec<Value>, vm: &VM, state: &mut VMState, modules: &[ModuleChunk]) -> Result<Value, String> {
+fn printf(
+    args: Vec<Value>,
+    vm: &VM,
+    state: &mut VMState,
+    modules: &[ModuleChunk],
+) -> Result<Value, String> {
     match &args[0] {
         PhoenixPointer(p) => {
             let s = &state.deref_string(*p).value;
@@ -121,7 +132,10 @@ fn printf(args: Vec<Value>, vm: &VM, state: &mut VMState, modules: &[ModuleChunk
                         ));
                     }
                     // text.insert_str(i, &value_to_string(args.get(0).unwrap()));
-                    text.insert_str(i, &args.get(0).unwrap().to_string(vm, state, &modules.to_vec()));
+                    text.insert_str(
+                        i,
+                        &args.get(0).unwrap().to_string(vm, state, &modules.to_vec()),
+                    );
                     args.remove(0);
                 }
                 i += 1;
@@ -148,15 +162,17 @@ pub fn int(args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Resu
             }
         }),
         _ => {
-            return Err(format!(
-                "Could not convert {} to int!",
-                args[0].get_type()
-            ));
+            return Err(format!("Could not convert {} to int!", args[0].get_type()));
         }
     })
 }
 
-pub fn float(args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Result<Value, String> {
+pub fn float(
+    args: Vec<Value>,
+    _: &VM,
+    _: &mut VMState,
+    _: &[ModuleChunk],
+) -> Result<Value, String> {
     Ok(match &args[0] {
         Float(f) => Float(*f),
         Long(l) => Float(*l as f32),
@@ -167,7 +183,7 @@ pub fn float(args: Vec<Value>, _: &VM, _: &mut VMState, _: &[ModuleChunk]) -> Re
             } else {
                 s
             }
-                .parse::<f32>()
+            .parse::<f32>()
             {
                 Ok(i) => i,
                 Err(_) => {

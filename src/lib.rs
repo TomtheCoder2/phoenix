@@ -6,10 +6,10 @@ use std::process::exit;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 
-use crate::chunk::{Instr, ModuleChunk};
 use crate::chunk::OpCode::OpReturn;
+use crate::chunk::{Instr, ModuleChunk};
 use crate::compiler::{CompilationResult, Compiler};
-use crate::vm::{ExecutionMode, VMState, VM, Global};
+use crate::vm::{ExecutionMode, Global, VMState, VM};
 use crate::InterpretResult::InterpretOK;
 
 pub mod chunk;
@@ -18,7 +18,7 @@ pub mod debug;
 pub mod gc;
 pub mod io;
 pub mod log;
-pub mod native;
+mod native;
 pub mod precedence;
 pub mod resolver;
 pub mod run;
@@ -33,7 +33,6 @@ pub enum InterpretResult {
     InterpretCompileError,
     InterpretRuntimeError,
 }
-
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -60,7 +59,15 @@ pub fn repl() -> Result<(), ReadlineError> {
     }
     let s = &String::new();
     let file_name = "script.phx".to_string();
-    let mut vm = VM::new(if DEBUG { ExecutionMode::Trace } else { ExecutionMode::Default }, CompilationResult::default(), false);
+    let mut vm = VM::new(
+        if DEBUG {
+            ExecutionMode::Trace
+        } else {
+            ExecutionMode::Default
+        },
+        CompilationResult::default(),
+        false,
+    );
     let mut state: Option<VMState> = None;
     let mut modules = Vec::new();
     let mut compiler = Compiler::new_file(file_name, s.clone(), false, 0, DEBUG);
@@ -88,15 +95,28 @@ pub fn repl() -> Result<(), ReadlineError> {
 
                 let mut result = result.unwrap();
                 // pop the return instructions
-                result.modules[0].functions[0].chunk.code.retain(|x| x.op_code != OpReturn);
-                let line_num = result.modules[0].functions[0].chunk.code.last().unwrap().line_num;
-                result.modules[0].functions[0].chunk.code.push(Instr { op_code: OpReturn, line_num });
+                result.modules[0].functions[0]
+                    .chunk
+                    .code
+                    .retain(|x| x.op_code != OpReturn);
+                let line_num = result.modules[0].functions[0]
+                    .chunk
+                    .code
+                    .last()
+                    .unwrap()
+                    .line_num;
+                result.modules[0].functions[0].chunk.code.push(Instr {
+                    op_code: OpReturn,
+                    line_num,
+                });
                 state = if let Some(mut s) = state {
                     while s.globals[0].len() < result.modules[0].identifiers.len() {
                         s.globals[0].push(Global::Uninit);
                     }
                     Some(s)
-                } else { state };
+                } else {
+                    state
+                };
                 vm.modules_cache = result.modules;
                 let s = vm.run_state(state.clone(), modules.clone());
                 if let InterpretOK(mut s, m) = s {
