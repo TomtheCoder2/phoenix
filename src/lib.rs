@@ -18,7 +18,7 @@ pub mod debug;
 pub mod gc;
 pub mod io;
 pub mod log;
-mod native;
+pub mod native;
 pub mod precedence;
 pub mod resolver;
 pub mod run;
