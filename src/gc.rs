@@ -143,8 +143,7 @@ impl GC {
     }
 
     fn mark_grey(&mut self) {
-        while !self.grey_worklist.is_empty() {
-            let index = self.grey_worklist.pop().unwrap();
+        while let Some(index) = self.grey_worklist.pop() {
             let obj_opt = self.instances.get(index);
             let mut to_mark = Vec::new();
 

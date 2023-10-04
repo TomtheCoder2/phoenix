@@ -85,7 +85,12 @@ pub fn main() {
         }
     } else if cli.file.is_none() {
         info!("Phoenix Console");
-        if repl().is_ok() {}
+        match repl().is_ok() {
+            true => (),
+            false => {
+                error!("Error in REPL");
+            }
+        }
         exit(0);
     } else {
         run_f(cli.file.unwrap());
