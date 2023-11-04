@@ -73,19 +73,49 @@ pub fn repl() -> Result<(), ReadlineError> {
     let mut compiler = Compiler::new_file(file_name, s.clone(), false, 0, DEBUG);
     let mut last_state;
     let mut last_compiler;
+    let mut current_prompt = ">>";
+    let default_prompt = ">>";
+    let mut current_line = "".to_string();
+    // tracks how many blocks deep we are (and thus how many spaces to indent)
+    let mut block_offset=0;
     loop {
         // let readline = rl.readline(" \x1b[32m>>\x1b[0m");
-        let readline = rl.readline(">>");
+        let readline = rl.readline_with_initial(current_prompt, (&*"  ".repeat(block_offset), ""));
         match readline {
             Ok(mut line) => {
-                last_state = state.clone();
-                last_compiler = compiler.clone();
                 rl.add_history_entry(line.as_str())
                     .expect("failed to add history");
+                line.push('\n');
+                current_line.push_str(&line);
+                // check if there are any open blocks/parens (check for: {, (, [)
+                let mut open_blocks = 0;
+                let mut open_parens = 0;
+                let mut open_brackets = 0;
+                for c in current_line.chars() {
+                    match c {
+                        '{' => open_blocks += 1,
+                        '}' => open_blocks -= 1,
+                        '(' => open_parens += 1,
+                        ')' => open_parens -= 1,
+                        '[' => open_brackets += 1,
+                        ']' => open_brackets -= 1,
+                        _ => (),
+                    }
+                }
+                if open_blocks > 0 || open_parens > 0 || open_brackets > 0 {
+                    block_offset = open_blocks;
+                    current_prompt = "..";
+                    continue;
+                }
+                current_prompt = default_prompt.clone();
+                last_state = state.clone();
+                last_compiler = compiler.clone();
                 // let _result = fly(file_name.clone(), line, DEBUG, false);
                 // dbg!(&compiler.current_module().scanner.code);
-                line.push('\n');
-                compiler.current_module().scanner.code.push_str(&line);
+
+                compiler.current_module().scanner.code.push_str(&current_line);
+                current_line = "".to_string();
+                block_offset = 0;
                 // dbg!(&compiler.current_module().scanner.code);
                 let result = compiler.compile(DEBUG);
                 if result.is_none() {
