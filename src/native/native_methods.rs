@@ -83,6 +83,9 @@ lazy_static! {
                                 HeapObjVal::PhoenixString(ref mut string) => {
                                     Some(Ok(Long(string.value.len() as i64)))
                                 }
+                                HeapObjVal::PhoenixHashMap(ref mut hashmap) => {
+                                    Some(Ok(Long(hashmap.map.len() as i64)))
+                                }
                                 _ => None
                             }
                         }
@@ -119,7 +122,25 @@ lazy_static! {
                         _ => None
                     }
                 })
-            )
+            ),
+            (
+                "get",
+                (Some(1), |this,args,_,state,_| {
+                    match this {
+                        PhoenixPointer(ptr) => {
+                            let obj = state.deref_mut(ptr);
+                            match obj.obj {
+                                HeapObjVal::PhoenixHashMap(ref mut map) => {
+                                    println!("{:?}, arg: {:?}", map.map, args);
+                                    Some(Ok(map.map.get(&args[0]).unwrap_or(&Nil).clone()))
+                                }
+                                _ => None
+                            }
+                        }
+                        _ => None
+                    }
+                })
+            ),
         ]));
 }
 

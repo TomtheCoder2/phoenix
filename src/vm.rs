@@ -6,10 +6,7 @@ use crate::gc::GC;
 use crate::native::native_functions::*;
 use crate::native::native_methods::{NativeMethod, NATIVE_METHODS};
 use crate::resolver::UpValue;
-use crate::value::{
-    is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure,
-    ObjInstance, ObjList, ObjString, Value,
-};
+use crate::value::{is_falsey, values_equal, HeapObj, HeapObjType, HeapObjVal, ObjBoundMethod, ObjClosure, ObjInstance, ObjList, ObjString, Value, ObjHashMap};
 use crate::{error, phoenix_error, warn, InterpretResult, VERSION};
 use std::collections::HashMap;
 
@@ -221,7 +218,7 @@ impl VMState {
                 phoenix_error!("VM panic! Unable to get current closure?");
             }
         }
-        .clone();
+            .clone();
         match self.deref_into_mut(&pointer_val, HeapObjType::PhoenixClosure) {
             Ok(closure_obj) => closure_obj.as_closure_mut(),
             Err(x) => {
@@ -262,7 +259,7 @@ impl VMState {
                 phoenix_error!("VM panic! Attempted to push an upvalue that doesn't exist");
             }
         }
-        .clone();
+            .clone();
         self.stack.push(val);
     }
 
@@ -472,7 +469,7 @@ impl VMState {
             Ok(x) => x,
             Err(_) => phoenix_error!("Failed to lock native functions mutex"),
         }
-        .iter()
+            .iter()
         {
             if let Some(index) = identifiers.iter().position(|x| x == str) {
                 self.globals[self.current_frame.module][index] =
@@ -816,7 +813,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -837,7 +834,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -859,7 +856,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -881,7 +878,7 @@ impl VM {
                                     "Undefined variable '{}'",
                                     VM::get_variable_name(index, &state, &modules)
                                 )
-                                .as_str(),
+                                    .as_str(),
                                 &state,
                                 &modules,
                             );
@@ -1110,7 +1107,7 @@ impl VM {
                                             VM::get_variable_name(name_index, &state, &modules),
                                             instance
                                         )
-                                        .as_str(),
+                                            .as_str(),
                                         &state,
                                         &modules,
                                     );
@@ -1179,7 +1176,7 @@ impl VM {
                                                 .unwrap()
                                                 .name,
                                         )
-                                        .as_str(),
+                                            .as_str(),
                                         &state,
                                         &modules,
                                     );
@@ -1531,6 +1528,17 @@ impl VM {
                         );
                         return InterpretResult::InterpretRuntimeError;
                     }
+                }
+                OpCreateHashMap(n) => {
+                    let mut map = HashMap::new();
+                    for _ in 0..n {
+                        let value = state.pop();
+                        let key = state.pop();
+                        map.insert(key, value);
+                    }
+                    let map_obj = ObjHashMap::new(map);
+                    let ptr = state.alloc(HeapObj::new_hashmap(map_obj));
+                    state.stack.push(ptr);
                 }
             }
         }

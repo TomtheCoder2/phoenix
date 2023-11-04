@@ -82,6 +82,8 @@ pub enum OpCode {
     OpCreateList(usize),
     // Push the string on the stack to the heap and replace it with a pointer to the heap
     OpCreateString,
+    /// Creates a hashmap of the last 2n items, where the first value is the key and the second one is the value
+    OpCreateHashMap(usize)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]

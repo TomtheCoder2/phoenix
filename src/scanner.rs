@@ -65,6 +65,7 @@ pub enum TokenType {
     GreaterEqual,
     Less,
     LessEqual,
+    Colon,
 
     Identifier,
     String,
@@ -213,6 +214,7 @@ impl Scanner {
                 }
             }
             b'"' => self.string(),
+            b':' => self.create_token(TokenType::Colon),
             _ => self.error_token("Unexpected character."),
         }
     }

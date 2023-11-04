@@ -1,0 +1,5 @@
+var hashmap = { "one": 1, "two": 2, "three": 3 };
+print(hashmap);
+print(hashmap.len());
+print(hashmap.get("one"));
+print(hashmap.get("four"));

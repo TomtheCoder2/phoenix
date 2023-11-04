@@ -181,6 +181,16 @@ impl GC {
                         HeapObjVal::PhoenixString(_string) => {
                             // to_mark.push(string.ptr);
                         }
+                        HeapObjVal::PhoenixHashMap(map) => {
+                            for val in &map.map {
+                                if let Value::PhoenixPointer(ptr) = val.0 {
+                                    to_mark.push(*ptr);
+                                }
+                                if let Value::PhoenixPointer(ptr) = val.1 {
+                                    to_mark.push(*ptr);
+                                }
+                            }
+                        }
                     }
                 }
                 None => panic!("VM panic! Why is there an unallocated pointer?"),

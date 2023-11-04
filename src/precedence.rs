@@ -30,6 +30,7 @@ pub enum ParseFn {
     String,
     Variable,
     List,
+    HashMap,
     And,
     Or,
     Call,
@@ -234,8 +235,14 @@ const PARSE_RULE_SUPER: ParseRule = ParseRule {
     infix: ParseFn::None,
     precedence: Precedence::None,
 };
-const PARSE_RULE_LB: ParseRule = ParseRule {
+const PARSE_RULE_LBRACKET: ParseRule = ParseRule {
     prefix: ParseFn::List,
+    infix: ParseFn::None,
+    precedence: Precedence::None,
+};
+
+const PARSE_RULE_LBRACE: ParseRule = ParseRule {
+    prefix: ParseFn::HashMap,
     infix: ParseFn::None,
     precedence: Precedence::None,
 };
@@ -243,7 +250,8 @@ const PARSE_RULE_LB: ParseRule = ParseRule {
 pub fn get_rule(operator: TokenType) -> ParseRule {
     match operator {
         TokenType::LeftParen => PARSE_RULE_LP,
-        TokenType::LeftBracket => PARSE_RULE_LB,
+        TokenType::LeftBracket => PARSE_RULE_LBRACKET,
+        TokenType::LeftBrace => PARSE_RULE_LBRACE,
         TokenType::Minus => PARSE_RULE_MINUS,
         TokenType::MinusMinus => PARSE_RULE_MINUS_MINUS,
         TokenType::MinusAssign => PARSE_RULE_MINUS_ASSIGN,

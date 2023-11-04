@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
 
 use crate::chunk::ModuleChunk;
 use serde::{Deserialize, Serialize};
@@ -15,7 +16,7 @@ pub enum Value {
     #[default]
     Nil,
     // todo: fix this, cause this type is only used for initialisation of strings
-    // todo: create static strings, for example for prints, so we can allocate them once and have multiple references to them
+    // todo: create static strings, for example for prints, so we can allocate them once and have multiple immutable references to them
     PhoenixString(String),
     // Index of the function in the functions Vec in VM // Fixme: Is this even reachable? Can this be completely removed and the parameter put in OpClosure?
     PhoenixFunction(usize),
@@ -29,6 +30,26 @@ pub enum Value {
     // for strings, instances and lists
     PhoenixPointer(usize),
     PhoenixBoundMethod(ObjBoundMethod),
+}
+
+// todo fix this (dont hash the pointer, but the value)
+impl Hash for Value {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Value::Float(x) => x.to_bits().hash(state),
+            Value::Long(x) => x.hash(state),
+            Value::Bool(x) => x.hash(state),
+            Value::Nil => 0.hash(state),
+            Value::PhoenixString(x) => x.hash(state),
+            Value::PhoenixFunction(x) => x.hash(state),
+            Value::NativeFunction(x, _) => x.hash(state),
+            Value::NativeMethod(x, _) => x.hash(state),
+            Value::PhoenixClass(x) => x.hash(state),
+            Value::PhoenixModule(x) => x.hash(state),
+            Value::PhoenixPointer(x) => x.hash(state),
+            Value::PhoenixBoundMethod(x) => x.hash(state),
+        }
+    }
 }
 
 impl Eq for Value {}
@@ -85,6 +106,8 @@ impl Value {
                 if let HeapObjVal::PhoenixList(_) = &state.deref(*pointer).obj {
                     state.deref(*pointer).to_string(vm, state, modules)
                 } else if let HeapObjVal::PhoenixString(_) = &state.deref(*pointer).obj {
+                    state.deref(*pointer).to_string(vm, state, modules)
+                } else if let HeapObjVal::PhoenixHashMap(_) = &state.deref(*pointer).obj {
                     state.deref(*pointer).to_string(vm, state, modules)
                 } else {
                     format!(
@@ -258,7 +281,7 @@ pub fn values_equal(t: (&Value, &Value)) -> bool {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Ord, PartialOrd, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Ord, PartialOrd, Eq, Hash)]
 pub struct ObjBoundMethod {
     pub method: usize,
     // Index into the functions vec for which function to call
@@ -276,6 +299,7 @@ pub enum HeapObjType {
     PhoenixClosure,
     PhoenixList,
     PhoenixString,
+    PhoenixHashMap,
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -329,6 +353,14 @@ impl HeapObj {
             is_marked: false,
         }
     }
+
+    pub fn new_hashmap(map: ObjHashMap) -> HeapObj {
+        HeapObj {
+            obj: HeapObjVal::PhoenixHashMap(map),
+            obj_type: HeapObjType::PhoenixHashMap,
+            is_marked: false,
+        }
+    }
 }
 
 // I swear i really tried to not have this be duplicate with HeapObjType, but couldn't figure out a way to do it
@@ -339,6 +371,7 @@ pub enum HeapObjVal {
     PhoenixClosure(ObjClosure),
     PhoenixString(ObjString),
     PhoenixList(ObjList),
+    PhoenixHashMap(ObjHashMap),
 }
 
 impl HeapObjVal {
@@ -375,6 +408,14 @@ impl HeapObjVal {
                 panic!("VM panic! How did a placeholder value get here?")
             }
             HeapObjVal::PhoenixString(string) => string.value.clone(),
+            HeapObjVal::PhoenixHashMap(map) => format!(
+                "{{{}}}",
+                map.map
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", k.to_string(vm, state, modules), v.to_string(vm, state, modules)))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
         }
     }
 
@@ -441,6 +482,14 @@ impl HeapObjVal {
             panic!("VM panic!")
         }
     }
+
+    pub fn as_hashmap(&self) -> &ObjHashMap {
+        if let HeapObjVal::PhoenixHashMap(map) = self {
+            map
+        } else {
+            panic!("VM panic!")
+        }
+    }
 }
 
 /// Runtime instantiation of class definitions
@@ -497,5 +546,17 @@ pub struct ObjString {
 impl ObjString {
     pub fn new(value: String) -> ObjString {
         ObjString { value }
+    }
+}
+
+/// Runtime representation of a HashMap
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone, Default)]
+pub struct ObjHashMap {
+    pub map: HashMap<Value, Value>,
+}
+
+impl ObjHashMap {
+    pub fn new(map: HashMap<Value, Value>) -> ObjHashMap {
+        ObjHashMap { map }
     }
 }

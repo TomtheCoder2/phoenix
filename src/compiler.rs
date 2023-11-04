@@ -350,6 +350,7 @@ impl Compiler {
             ParseFn::Literal => self.literal(),
             ParseFn::String => self.string(),
             ParseFn::List => self.list(can_assign),
+            ParseFn::HashMap => self.hashmap(can_assign),
             ParseFn::Variable => self.variable(can_assign),
             ParseFn::And => self.and_operator(),
             ParseFn::Or => self.or_operator(),
@@ -923,7 +924,7 @@ impl Compiler {
         self.emit_instr(OpPop);
         self.parse_precedence(Precedence::And); // Parse right hand side of the infix expression
         self.patch_jump(end_jump); // Jump to after it if the first argument was already false, leaving the false value on the top of the stack to be the result
-                                   // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
+        // Otherwise the first argument is true, so the value of the whole and is equal to the value of the second argument, so just proceed as normal
     }
 
     fn or_operator(&mut self) {
@@ -956,7 +957,7 @@ impl Compiler {
             } else {
                 s
             }
-            .parse::<f32>()
+                .parse::<f32>()
             {
                 self.emit_constant(Value::Float(value));
             } else {
@@ -985,6 +986,7 @@ impl Compiler {
     }
 
     fn list(&mut self, _can_assign: bool) {
+        // * list: [1, 2, 3, 4, ...]
         let mut size = 0;
         if !self.check(TokenType::RightBracket) {
             loop {
@@ -997,6 +999,26 @@ impl Compiler {
         }
         self.consume(TokenType::RightBracket, "Expected ']' after list");
         self.emit_instr(OpCreateList(size));
+    }
+
+    fn hashmap(&mut self, _can_assign: bool) {
+        // hashmap looks like this: var hashmap = { "key": "value", "key2": "value2" }
+        // and we should push all the values in this order on the stack and then emit OpCode::CreateHashMap(size)
+        // with size equal to the amount of keys
+        let mut size = 0;
+        if !self.check(TokenType::RightBrace) {
+            loop {
+                self.expression();
+                self.consume(TokenType::Colon, "Expected ':' after key");
+                self.expression();
+                size += 1;
+                if !self.match_cur(TokenType::Comma) {
+                    break;
+                }
+            }
+        }
+        self.consume(TokenType::RightBrace, "Expected '}' after hashmap");
+        self.emit_instr(OpCreateHashMap(size));
     }
 
     /// Parse an identifier that we know to be a variable
