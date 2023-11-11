@@ -20,5 +20,5 @@ jobs:
         run: cargo build -r; cargo test
       - uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.BINARY_NAME }}
-          path: target/release/${{ env.BINARY_NAME }}*
+          name: upload phoenix binary
+          path: target/release/phoenix
