@@ -1,4 +1,4 @@
-use phoenix_lang::chunk::FunctionType::{Function, Script};
+use phoenix_lang::chunk::FunctionType::{Script};
 use phoenix_lang::chunk::OpCode::*;
 use phoenix_lang::chunk::{Chunk, FunctionChunk, Instr, ModuleChunk};
 use phoenix_lang::compiler::{CompilationResult, Compiler};

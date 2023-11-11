@@ -107,7 +107,7 @@ pub fn repl() -> Result<(), ReadlineError> {
                     current_prompt = "..";
                     continue;
                 }
-                current_prompt = default_prompt.clone();
+                current_prompt = default_prompt;
                 last_state = state.clone();
                 last_compiler = compiler.clone();
                 // let _result = fly(file_name.clone(), line, DEBUG, false);
