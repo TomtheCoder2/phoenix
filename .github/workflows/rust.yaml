@@ -18,3 +18,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Build and test Phoenix
         run: cargo build; cargo test
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.BINARY_NAME }}
+          path: target/release/${{ env.BINARY_NAME }}*
