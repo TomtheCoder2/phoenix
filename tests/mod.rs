@@ -22,7 +22,7 @@ use phoenix_lang::vm::{ExecutionMode, VM};
 #[test]
 fn io_test() {
     let code = "print(\"hello\");".to_string();
-    let mut compiler = Compiler::new_file("script".to_string(), code, false, 0);
+    let mut compiler = Compiler::new_file("script".to_string(), code, false, 0, true);
     let res = if let Some(res) = compiler.compile(false) {
         res
     } else {
@@ -40,7 +40,7 @@ fn io_test() {
 #[test]
 fn lang_test() {
     let code = "print(1 + 11);".to_string();
-    let mut compiler = Compiler::new_file("script".to_string(), code, false, 0);
+    let mut compiler = Compiler::new_file("script".to_string(), code, false, 0, true);
     let res = compiler.compile(false).unwrap();
     // print the code
     println!("{:?}", res);
