@@ -1,4 +1,4 @@
-use phoenix_lang::chunk::FunctionType::{Script};
+use phoenix_lang::chunk::FunctionType::Script;
 use phoenix_lang::chunk::OpCode::*;
 use phoenix_lang::chunk::{Chunk, FunctionChunk, Instr, ModuleChunk};
 use phoenix_lang::compiler::{CompilationResult, Compiler};
@@ -15,7 +15,7 @@ fn do_test_functions(
     functions: Vec<FunctionChunk>,
     classes: Vec<chunk::ClassChunk>,
 ) {
-    let result = Compiler::compile_code(code.to_string(), false);
+    let result = Compiler::compile_code(code.to_string(), false, false);
     let cur_pos = result.clone().unwrap().cur_pos;
     assert_eq!(
         result,

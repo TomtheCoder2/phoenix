@@ -1,3 +1,4 @@
+use rustyline::config::Configurer;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
@@ -36,8 +37,8 @@ pub enum InterpretResult {
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn fly(file: String, source: String, debug: bool, quiet: bool) -> InterpretResult {
-    let mut compiler = Compiler::new_file(file, source, quiet, 0, DEBUG);
+pub fn fly(file: String, source: String, debug: bool, quiet: bool, wait: bool) -> InterpretResult {
+    let mut compiler = Compiler::new_file(file, source, quiet, 0, DEBUG, wait);
     let result = compiler.compile(debug);
     if result.is_none() {
         return InterpretResult::InterpretCompileError;
@@ -70,19 +71,21 @@ pub fn repl() -> Result<(), ReadlineError> {
     );
     let mut state: Option<VMState> = None;
     let mut modules = Vec::new();
-    let mut compiler = Compiler::new_file(file_name, s.clone(), false, 0, DEBUG);
+    let mut compiler = Compiler::new_file(file_name, s.clone(), false, 0, DEBUG, false);
     let mut last_state;
     let mut last_compiler;
     let mut current_prompt = ">>";
     let default_prompt = ">>";
     let mut current_line = "".to_string();
     // tracks how many blocks deep we are (and thus how many spaces to indent)
-    let mut block_offset=0;
+    let mut block_offset = 0;
     loop {
         // let readline = rl.readline(" \x1b[32m>>\x1b[0m");
         let readline = rl.readline_with_initial(current_prompt, (&*"  ".repeat(block_offset), ""));
         match readline {
             Ok(mut line) => {
+                rl.set_max_history_size(10000)
+                    .expect("failed to set max history size");
                 rl.add_history_entry(line.as_str())
                     .expect("failed to add history");
                 line.push('\n');
@@ -113,7 +116,11 @@ pub fn repl() -> Result<(), ReadlineError> {
                 // let _result = fly(file_name.clone(), line, DEBUG, false);
                 // dbg!(&compiler.current_module().scanner.code);
 
-                compiler.current_module().scanner.code.push_str(&current_line);
+                compiler
+                    .current_module()
+                    .scanner
+                    .code
+                    .push_str(&current_line);
                 current_line = "".to_string();
                 block_offset = 0;
                 // dbg!(&compiler.current_module().scanner.code);
@@ -179,7 +186,7 @@ pub fn repl() -> Result<(), ReadlineError> {
     Ok(())
 }
 
-pub fn run_file(filename: String, debug: bool) -> InterpretResult {
+pub fn run_file(filename: String, debug: bool, wait: bool) -> InterpretResult {
     let path = Path::new(&filename);
     let path_display = path.display();
 
@@ -193,7 +200,7 @@ pub fn run_file(filename: String, debug: bool) -> InterpretResult {
 
     let mut s = String::new();
     match file.read_to_string(&mut s) {
-        Ok(_) => fly(filename, s, debug, false),
+        Ok(_) => fly(filename, s, debug, false, wait),
         Err(why) => {
             eprintln!("Failed to read {}: {}", path_display, why);
             exit(1);

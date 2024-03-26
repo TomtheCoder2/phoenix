@@ -19,10 +19,10 @@ use crate::{error, info, repl, run_file, DEBUG};
 
 #[derive(Parser, Debug)]
 #[command(
-author,
-version,
-about,
-long_about = "The compiler and interpreter for the phoenix programming language.\n\n\
+    author,
+    version,
+    about,
+    long_about = "The compiler and interpreter for the phoenix programming language.\n\n\
 To simply interpret a file, give it as the [input file] parameter.\n
 To compile to a phc file, specify an output file with the output-file flag.\n
 To start the REPL, simply dont provide any arguments.\n"
@@ -42,6 +42,9 @@ enum Commands {
     Run {
         /// The file to run
         file: String,
+        /// Wait for use input before running each statement
+        #[arg(short, long, action)]
+        wait: bool,
     },
     /// Build a file
     Build {
@@ -79,8 +82,8 @@ pub fn main() {
                 }
                 compile(file, output_file, debug);
             }
-            Commands::Run { file } => {
-                run_f(file);
+            Commands::Run { file, wait } => {
+                run_f(file, wait);
             }
         }
     } else if cli.file.is_none() {
@@ -93,14 +96,14 @@ pub fn main() {
         }
         exit(0);
     } else {
-        run_f(cli.file.unwrap());
+        run_f(cli.file.unwrap(), false);
     }
 }
 
-fn run_f(file: String) {
+fn run_f(file: String, wait: bool) {
     // check if the file ends in .phx
     if file.ends_with(".phx") {
-        run_file(file, DEBUG);
+        run_file(file, DEBUG, wait);
     } else {
         compiled_run(file);
     }
@@ -141,7 +144,7 @@ fn compile(input_file: String, actual_output_file: String, debug: bool) {
             exit(64);
         }
     };
-    let mut compiler = Compiler::new_file(file_name, code.clone(), true, 0, debug);
+    let mut compiler = Compiler::new_file(file_name, code.clone(), true, 0, debug, false);
     let res = if let Some(res) = compiler.compile(debug) {
         res
     } else {
@@ -159,9 +162,16 @@ fn compile(input_file: String, actual_output_file: String, debug: bool) {
     info!("Size after compression: {} bytes", compressed_data.len());
     if DEBUG {
         info!("data: {:?}", compressed_data);
-        #[cfg(feature = "debug")]{
-            write_to_file(&format!("{}.toml", &actual_output_file), toml::to_string(&res).unwrap().as_bytes().to_vec());
-            write_to_file(&format!("{}.ron", &actual_output_file), ron::to_string(&res).unwrap().as_bytes().to_vec());
+        #[cfg(feature = "debug")]
+        {
+            write_to_file(
+                &format!("{}.toml", &actual_output_file),
+                toml::to_string(&res).unwrap().as_bytes().to_vec(),
+            );
+            write_to_file(
+                &format!("{}.ron", &actual_output_file),
+                ron::to_string(&res).unwrap().as_bytes().to_vec(),
+            );
         }
     }
     info!("Size of code: {} bytes", code.len());

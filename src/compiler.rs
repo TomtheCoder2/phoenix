@@ -38,6 +38,8 @@ pub struct Compiler {
     panic_mode: bool,
     quiet_mode: bool,
     debug_mode: bool,
+    /// Means that before each line is executed, the VM will wait for user input
+    wait_mode: bool,
 }
 
 impl Compiler {
@@ -131,8 +133,30 @@ impl Compiler {
         &self.current_code_module_ref().tokens[self.current_code_module_ref().tokens.len() - 1]
     }
 
+    // also adds the opWait code if the token_type is a semicolon
     fn consume(&mut self, token_type: TokenType, msg: &str) {
         self.advance();
+        if self.previous().token_type == TokenType::Semicolon {
+            if self.wait_mode {
+                let file = self.current_module().scanner.file.clone();
+                let line = self.current_module().scanner.cur_line;
+                let s = format!(
+                    "{}:{}: {}",
+                    file, line,
+                    self.current_module()
+                        .scanner
+                        .code
+                        .split("\n")
+                        .collect::<Vec<&str>>()
+                        .iter()
+                        .nth(line - 1)
+                        .unwrap()
+                );
+                self.emit_constant(Value::PhoenixString(s));
+                self.emit_instr(OpCreateString);
+                self.emit_instr(OpWait);
+            }
+        }
         if !(self.previous().token_type == token_type) {
             self.error(msg);
         }
@@ -1280,6 +1304,7 @@ impl Compiler {
             quiet,
             start_line,
             false,
+            false,
         )
     }
 
@@ -1289,6 +1314,7 @@ impl Compiler {
         quiet: bool,
         start_line: usize,
         debug_mode: bool,
+        wait_mode: bool,
     ) -> Compiler {
         let mut compiler = Compiler {
             modules: vec![CompilerModuleChunk::new(
@@ -1306,6 +1332,7 @@ impl Compiler {
             panic_mode: false,
             quiet_mode: quiet,
             debug_mode,
+            wait_mode,
         };
         compiler.new_start(file, code, quiet, start_line, 0);
         compiler
@@ -1390,8 +1417,9 @@ impl Compiler {
         }
     }
 
-    pub fn compile_code(code: String, debug: bool) -> Option<CompilationResult> {
-        let mut compiler = Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, false, 0, debug);
+    pub fn compile_code(code: String, debug: bool, wait: bool) -> Option<CompilationResult> {
+        let mut compiler =
+            Compiler::new_file(DEFAULT_FILE_NAME.to_string(), code, false, 0, debug, wait);
         compiler.compile(debug)
     }
 }
@@ -1409,6 +1437,7 @@ impl Clone for Compiler {
             panic_mode: self.panic_mode,
             quiet_mode: self.quiet_mode,
             debug_mode: false,
+            wait_mode: self.wait_mode,
         }
     }
 }

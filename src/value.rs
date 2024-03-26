@@ -412,7 +412,11 @@ impl HeapObjVal {
                 "{{{}}}",
                 map.map
                     .iter()
-                    .map(|(k, v)| format!("{}: {}", k.to_string(vm, state, modules), v.to_string(vm, state, modules)))
+                    .map(|(k, v)| format!(
+                        "{}: {}",
+                        k.to_string(vm, state, modules),
+                        v.to_string(vm, state, modules)
+                    ))
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
