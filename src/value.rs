@@ -496,6 +496,68 @@ impl HeapObjVal {
     }
 }
 
+
+// Convert Value to Primitives: f32, f64, i32, i64, bool, String
+impl TryFrom<Value> for f32 {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Float(f) => Ok(f),
+            Value::Long(l) => Ok(l as f32),
+            _ => Err("Invalid type".to_string()),
+        }
+    }
+}
+
+impl TryFrom<Value> for i64 {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Long(l) => Ok(l),
+            Value::Float(f) => Ok(f as i64),
+            _ => Err("Invalid type".to_string()),
+        }
+    }
+}
+
+impl TryFrom<Value> for i32 {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Long(l) => Ok(l as i32),
+            Value::Float(f) => Ok(f as i32),
+            _ => Err("Invalid type".to_string()),
+        }
+    }
+}
+
+impl TryFrom<Value> for bool {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::Bool(b) => Ok(b),
+            _ => Err("Invalid type".to_string()),
+        }
+    }
+}
+
+impl TryFrom<Value> for String {
+    type Error = String;
+
+    fn try_from(value: Value) -> Result<Self, Self::Error> {
+        match value {
+            Value::PhoenixString(s) => Ok(s),
+            _ => Err("Invalid type".to_string()),
+        }
+    }
+}
+
+
+
 /// Runtime instantiation of class definitions
 #[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct ObjInstance {
