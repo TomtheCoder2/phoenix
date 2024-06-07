@@ -505,7 +505,7 @@ impl TryFrom<Value> for f32 {
         match value {
             Value::Float(f) => Ok(f),
             Value::Long(l) => Ok(l as f32),
-            _ => Err("Invalid type".to_string()),
+            _ => Err(format!("Could not convert {} to float!", value.get_type())),
         }
     }
 }
@@ -517,7 +517,7 @@ impl TryFrom<Value> for i64 {
         match value {
             Value::Long(l) => Ok(l),
             Value::Float(f) => Ok(f as i64),
-            _ => Err("Invalid type".to_string()),
+            _ => Err(format!("Could not convert {} to int!", value.get_type())),
         }
     }
 }
@@ -529,7 +529,7 @@ impl TryFrom<Value> for i32 {
         match value {
             Value::Long(l) => Ok(l as i32),
             Value::Float(f) => Ok(f as i32),
-            _ => Err("Invalid type".to_string()),
+            _ => Err(format!("Could not convert {} to int!", value.get_type())),
         }
     }
 }
@@ -540,7 +540,7 @@ impl TryFrom<Value> for bool {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::Bool(b) => Ok(b),
-            _ => Err("Invalid type".to_string()),
+            _ => Err(format!("Could not convert {} to bool!", value.get_type())),
         }
     }
 }
@@ -551,7 +551,7 @@ impl TryFrom<Value> for String {
     fn try_from(value: Value) -> Result<Self, Self::Error> {
         match value {
             Value::PhoenixString(s) => Ok(s),
-            _ => Err("Invalid type".to_string()),
+            _ => Err(format!("Could not convert {} to string!", value.get_type())),
         }
     }
 }
