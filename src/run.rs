@@ -144,7 +144,7 @@ fn compile(input_file: String, actual_output_file: String, debug: bool) {
             exit(64);
         }
     };
-    let mut compiler = Compiler::new_file(file_name, code.clone(), true, 0, debug, false);
+    let mut compiler = Compiler::new_file(file_name, code.clone(), false, 0, debug, false);
     let res = if let Some(res) = compiler.compile(debug) {
         res
     } else {
