@@ -10,6 +10,8 @@ use crate::io::{get_file_as_byte_vec, read_file};
 use crate::vm::{debug_print_constants, ExecutionMode, VM};
 use crate::{error, info, repl, run_file, DEBUG};
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // Comments on how it works
 // general: phx are scripts and phc are compiled scripts
 // similar to rust:
@@ -87,7 +89,7 @@ pub fn main() {
             }
         }
     } else if cli.file.is_none() {
-        info!("Phoenix Console");
+        info!("Phoenix Console, version v{}", VERSION);
         match repl().is_ok() {
             true => (),
             false => {
